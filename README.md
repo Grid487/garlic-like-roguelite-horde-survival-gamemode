@@ -53,3 +53,5 @@ Highly recommend to have these console commands used:
 - con_filter_enable 1
 - arccw_mult_hipfire 0.3
 - arccw_mult_shootwhilesprinting 1
+
+This is my first time creating a gamemode so please bear with the file and code structure...any pointers to improve my work would be appreciated.
