@@ -1161,6 +1161,16 @@ hook.Add("PlayerSpawn", gl .. "player_spawn", function(ply)
 
         ply:SetNWBool(gl .. "spawn_dmg_reduction", true)
 
+        --* increase walk speed 
+        if not ply.gl_old_walk_speed then 
+            ply.gl_old_slow_walk_speed = ply:GetSlowWalkSpeed()
+            ply.gl_old_walk_speed = ply:GetWalkSpeed()
+            ply.gl_old_run_speed = ply:GetRunSpeed()
+        end
+
+        ply:SetSlowWalkSpeed(ply:GetWalkSpeed())
+        ply:SetWalkSpeed(ply:GetRunSpeed())
+
         --* RESET UNLOCKABLES 
         -- for k, data in SortedPairs(tbl_gl_character_stats) do 
             -- only read entries that are unlockables
