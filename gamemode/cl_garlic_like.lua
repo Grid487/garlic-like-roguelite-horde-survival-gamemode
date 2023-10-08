@@ -1353,7 +1353,7 @@ timer.Simple(2, function()
             statboost_num = math.Round(1 + 2 * num_modifier * (1 + upgrade.upgrade_level * 0.08))
             -- print("DETERMINED STAT BOOST RARITY " .. rarity)
             --* IF CARNAGE
-            if GetGlobalInt(gl .. "minutes", 1) >= 20 and ply:GetNWInt(gl .. string.upper(upgrade.name), 1) >= 100 then 
+            if GetGlobalInt(gl .. "minutes", 1) >= 20 and ply:GetNWInt(gl .. string.upper(upgrade.name), 1) >= 150 then 
                 statboost_num = statboost_num * 3
             end
 
@@ -2912,10 +2912,10 @@ timer.Simple(2, function()
                 garlic_like_upgrades_cleared = table.ClearKeys(garlic_like_upgrades)
                 Chance_upgrade_choice = math.random(1, 100)
                 local loop = 1
-                local chance_stats = (0.1 * 100)
+                local chance_stats = (0.25 * 100)
                 local chance_items = chance_stats + (0.15 * 100)
-                local chance_skills = chance_items + (0.25 * 100)
-                local chance_relics = chance_skills + (0.5 * 100)
+                local chance_skills = chance_items + (0.5 * 100)
+                local chance_relics = chance_skills + (0.1 * 100)
 
                 -- print("CHANCE UPGRADE CHOICE " .. Chance_upgrade_choice)
                 if Chance_upgrade_choice <= chance_stats then
@@ -4728,7 +4728,9 @@ timer.Simple(2, function()
 
             if tbl_ult.ult_cooldown > 0 then
                 -- tbl_ult.ult_cooldown = math.max(0, math.Approach(tbl_ult.ult_cooldown, 0, 0.03)) 
-                tbl_ult.ult_cooldown = math.Clamp(tbl_ult.ult_num_cooldown * (1 - (RealTime() - tbl_ult.ult_starttime) / tbl_ult.ult_num_cooldown), 0, tbl_ult.ult_num_cooldown)
+                if GetGlobalBool(gl .. "match_running", false) then 
+                    tbl_ult.ult_cooldown = math.Clamp(tbl_ult.ult_num_cooldown * (1 - (RealTime() - tbl_ult.ult_starttime) / tbl_ult.ult_num_cooldown), 0, tbl_ult.ult_num_cooldown)
+                end
             
                 surface.SetDrawColor(125, 125, 125)
                 surface.SetMaterial(Material("garlic_like/icon_tf2_ult.png"))
@@ -4876,7 +4878,7 @@ timer.Simple(2, function()
                     local value
                     local index_for_pos
                     local x_pos
-                    local added_value = 0
+                    local added_value = 0 --* added value depends on if the upgrade is reductive or multiplicative.
                     
                     if entry.stat_type == "STR" then 
                         index_for_pos = k

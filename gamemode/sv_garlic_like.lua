@@ -22,6 +22,7 @@ util.AddNetworkString(gl .. "reset_unlockables_sv_to_cl")
 util.AddNetworkString(gl .. "send_match_stats_sv_to_cl") 
 util.AddNetworkString(gl .. "send_damage_numbers_sv_to_cl") 
 util.AddNetworkString(gl .. "send_chat_message_sv_to_cl") 
+
 util.AddNetworkString(gl .. "update_gold_from_anim_cl_to_sv")
 util.AddNetworkString(gl .. "pause_game_cl_to_sv") 
 util.AddNetworkString(gl .. "update_database_cl_to_sv")
@@ -116,11 +117,13 @@ for k, bonus in ipairs(tbl_gl_bonuses_weapons) do
     table.insert(gun_bonuses, 1, bonus.name)
 end
 
-local tbl_gl_elements = {
+tbl_gl_elements = {
     [1] = "fire",
     [2] = "poison",
     [3] = "lightning",
 }
+
+tbl_gl_presets = {}
  
 cvars.AddChangeCallback(gl .. "enable", function(name, old, new) end)
 
@@ -153,13 +156,13 @@ function garlic_like_unlock(ply, id, unlock_text)
     net.Send(ply)
 end
 
-local function garlic_like_print_stats(ply)
+function garlic_like_print_stats(ply)
     -- print("STR: " .. ply:GetNWInt(gl .. "STR", 1))
     -- print("AGI: " .. ply:GetNWInt(gl .. "AGI", 1))
     -- print("INT: " .. ply:GetNWInt(gl .. "INT", 1))
 end
 
-local function upgrade_str(ply, STR, statboost_num)
+function garlic_like_upgrade_str(ply, STR, statboost_num)
     local STR = ply:GetNWInt(gl .. "STR", 1)
     ply:SetNWInt(gl .. "STR", STR - ply.STR_BOOST)
     ply:SetNWInt(gl .. "STR", ply:GetNWInt(gl .. "STR", 1) + statboost_num)
@@ -171,7 +174,7 @@ local function upgrade_str(ply, STR, statboost_num)
         ply.old_hp_boost = 0
     end
 
-    ply.hp_boost = math.Round(math.max(0, STR * 3 + ply:GetNWInt(gl .. "hp_boost_base", 0)) * ply:GetNWFloat(gl .. "bonus_hp_boost_mult", 1))
+    ply.hp_boost = math.Round(math.max(0, STR * 3 + tonumber(ply:GetPData(gl .. "hp_boost_base", 0))) * ply:GetNWFloat(gl .. "bonus_hp_boost_mult", 1))
 
     if ply.hp_boost > ply.old_hp_boost then
         ply:SetMaxHealth(ply:GetMaxHealth() + (ply.hp_boost - ply.old_hp_boost))
@@ -179,18 +182,18 @@ local function upgrade_str(ply, STR, statboost_num)
 
     ply.old_hp_boost = ply.hp_boost
     ply:SetNWInt(gl .. "hp_boost", ply.hp_boost)
-    ply:SetNWFloat(gl .. "max_overheal", 1.5 + STR * 0.005 + ply:GetNWFloat(gl .. "max_overheal_base", 0)) 
-    ply:SetNWFloat(gl .. "bonus_damage", (STR * 0.005 + ply:GetNWFloat(gl .. "bonus_damage_base", 0)) * ply:GetNWFloat(gl .. "bonus_damage_mult", 1))
-    ply:SetNWFloat(gl .. "bonus_block_resistance", math.min(0.75, STR * 0.005 + ply:GetNWFloat(gl .. "bonus_block_resistance_base", 0)))
-    ply:SetNWInt(gl .. "bonus_hp_regen", math.Round(math.max(1, 1 + STR / 40 + ply:GetNWInt(gl .. "bonus_hp_regen_base", 0))))
-    ply:SetNWFloat(gl .. "bonus_critical_damage", (0.25 + STR * 0.015 + ply:GetNWFloat(gl .. "bonus_critical_damage_base", 0)) * (1 + ply:GetNWFloat(gl .. rh .. "hawkeye_sight_mul_2", 1)))
+    ply:SetNWFloat(gl .. "max_overheal", 1.5 + STR * 0.005 + tonumber(ply:GetPData(gl .. "max_overheal_base", 0))) 
+    ply:SetNWFloat(gl .. "bonus_damage", (STR * 0.005 + tonumber(ply:GetPData(gl .. "bonus_damage_base", 0))) * ply:GetNWFloat(gl .. "bonus_damage_mult", 1))
+    ply:SetNWFloat(gl .. "bonus_block_resistance", math.min(0.75, STR * 0.005 + tonumber(ply:GetPData(gl .. "bonus_block_resistance_base", 0))))
+    ply:SetNWInt(gl .. "bonus_hp_regen", math.Round(math.max(1, 1 + STR / 40 + tonumber(ply:GetPData(gl .. "bonus_hp_regen_base", 0)))))
+    ply:SetNWFloat(gl .. "bonus_critical_damage", (0.25 + STR * 0.015 + tonumber(ply:GetPData(gl .. "bonus_critical_damage_base", 0))) * (1 + ply:GetNWFloat(gl .. rh .. "hawkeye_sight_mul_2", 1)))
 
     if not tobool(ply:GetPData(gl .. "bonus_starting_str_unlocked")) and ply:GetNWInt(gl .. "STR", 1) >= 40 then 
         garlic_like_unlock(ply, gl .. "bonus_starting_str", "Starting STR Upgrade")
     end
 end
 
-local function upgrade_agi(ply, AGI, statboost_num)
+function garlic_like_upgrade_agi(ply, AGI, statboost_num)
     local AGI = ply:GetNWInt(gl .. "AGI", 1)
     ply:SetNWInt(gl .. "AGI", AGI - ply.AGI_BOOST)
     ply:SetNWInt(gl .. "AGI", ply:GetNWInt(gl .. "AGI", 1) + statboost_num)
@@ -198,19 +201,19 @@ local function upgrade_agi(ply, AGI, statboost_num)
     ply.AGI_BOOST = math.Round(AGI * ply:GetNWFloat(gl .. "bonus_stat_mult_crystal", 1) - AGI)
     ply:SetNWInt(gl .. "AGI", AGI + ply.AGI_BOOST)
     -- print("AGI BOOST " .. ply.AGI_BOOST)
-    ply:SetNWFloat(gl .. "bonus_resistance", math.min(0.95, AGI * 0.004 + ply:GetNWFloat(gl .. "bonus_resistance_base", 0)))
-    ply:SetNWInt(gl .. "bonus_resistance_flat", math.max(0, math.floor(AGI / 4) + ply:GetNWInt(gl .. "bonus_resistance_flat_base", 0)))
-    ply:SetNWFloat(gl .. "bonus_block_chance", math.min(1, AGI * 0.005 + ply:GetNWFloat(gl .. "bonus_block_chance_base", 0)))
-    ply:SetNWFloat(gl .. "bonus_evasion_chance", math.min(0.5, AGI * 0.0025 + ply:GetNWFloat(gl .. "bonus_evasion_chance_base", 0)))
-    ply:SetNWFloat(gl .. "bonus_critical_chance", (AGI * 0.007 + ply:GetNWFloat(gl .. "bonus_critical_chance_base", 0)) * ply:GetNWFloat(gl .. "bonus_critical_chance_mult", 1))
-    ply:SetNWFloat(gl .. "bonus_multihit_chance", math.min(5, AGI * 0.005 + ply:GetNWFloat(gl .. "bonus_multihit_chance_base", 0)))
+    ply:SetNWFloat(gl .. "bonus_resistance", math.min(0.95, AGI * 0.004 + tonumber(ply:GetPData(gl .. "bonus_resistance_base", 0))))
+    ply:SetNWInt(gl .. "bonus_resistance_flat", math.max(0, math.floor(AGI / 4) + tonumber(ply:GetPData(gl .. "bonus_resistance_flat_base", 0))))
+    ply:SetNWFloat(gl .. "bonus_block_chance", math.min(1, AGI * 0.005 + tonumber(ply:GetPData(gl .. "bonus_block_chance_base", 0))))
+    ply:SetNWFloat(gl .. "bonus_evasion_chance", math.min(0.5, AGI * 0.0025 + tonumber(ply:GetPData(gl .. "bonus_evasion_chance_base", 0))))
+    ply:SetNWFloat(gl .. "bonus_critical_chance", (AGI * 0.007 + tonumber(ply:GetPData(gl .. "bonus_critical_chance_base", 0))) * ply:GetNWFloat(gl .. "bonus_critical_chance_mult", 1))
+    ply:SetNWFloat(gl .. "bonus_multihit_chance", math.min(5, AGI * 0.005 + tonumber(ply:GetPData(gl .. "bonus_multihit_chance_base", 0))))
 
     if not tobool(ply:GetPData(gl .. "bonus_starting_agi_unlocked")) and ply:GetNWInt(gl .. "AGI", 1) >= 40 then 
         garlic_like_unlock(ply, gl .. "bonus_starting_agi", "Starting AGI Upgrade")
     end
 end
 
-local function upgrade_int(ply, INT, statboost_num)
+function garlic_like_upgrade_int(ply, INT, statboost_num)
     local INT = ply:GetNWInt(gl .. "INT", 1)
     ply:SetNWInt(gl .. "INT", INT - ply.INT_BOOST)
     ply:SetNWInt(gl .. "INT", ply:GetNWInt(gl .. "INT", 1) + statboost_num)
@@ -218,15 +221,16 @@ local function upgrade_int(ply, INT, statboost_num)
     ply.INT_BOOST = math.Round(INT * ply:GetNWFloat(gl .. "bonus_stat_mult_crystal", 1) - INT)
     ply:SetNWInt(gl .. "INT", INT + ply.INT_BOOST)
     mana_regen = ply:GetNWInt(gl .. "mana_regen", 1)
-    max_mana = ply:GetNWInt(gl .. "max_mana") + ply:GetNWInt(gl .. "max_mana_base", 0)
+    max_mana = ply:GetNWInt(gl .. "max_mana") + tonumber(ply:GetPData(gl .. "max_mana_base", 0))
     mana_boost = math.max(0, statboost_num * 2)
-    mana_regen_boost = math.max(1, 1 + math.floor(INT / 50) + ply:GetNWInt(gl .. "mana_regen_base", 0))
+    mana_regen_boost = math.max(1, 1 + math.floor(INT / 50) + tonumber(ply:GetPData(gl .. "mana_regen_base", 0)))
+
     ply:SetNWInt(gl .. "max_mana", max_mana + mana_boost)
     ply:SetNWInt(gl .. "mana_regen", mana_regen_boost)
-    ply:SetNWFloat(gl .. "bonus_mana_damage", math.max(0, INT * 0.01 + ply:GetNWFloat(gl .. "bonus_mana_damage_base", 0)))
-    ply:SetNWFloat(gl .. "bonus_mana_resistance", math.min(0.85, INT * 0.005 + ply:GetNWFloat(gl .. "bonus_mana_resistance_base", 0)))
-    ply:SetNWFloat(gl .. "bonus_xp_gain", (INT * 0.003 + ply:GetNWFloat(gl .. "bonus_xp_gain_base", 0)) * ply:GetNWFloat(gl .. "bonus_xp_mult", 1))
-    ply:SetNWFloat(gl .. "bonus_cooldown_mult", math.max(0.1, 1 - INT * 0.0015 - ply:GetNWFloat(gl .. "bonus_cooldown_mult_base", 0))) 
+    ply:SetNWFloat(gl .. "bonus_mana_damage", math.max(0, INT * 0.01 + tonumber(ply:GetPData(gl .. "bonus_mana_damage_base", 0))))
+    ply:SetNWFloat(gl .. "bonus_mana_resistance", math.min(0.85, INT * 0.005 + tonumber(ply:GetPData(gl .. "bonus_mana_resistance_base", 0))))
+    ply:SetNWFloat(gl .. "bonus_xp_gain", (INT * 0.003 + tonumber(ply:GetPData(gl .. "bonus_xp_gain_base", 0))) * ply:GetNWFloat(gl .. "bonus_xp_mult", 1))
+    ply:SetNWFloat(gl .. "bonus_cooldown_mult", math.max(0.1, 1 - INT * 0.0015 - tonumber(ply:GetPData(gl .. "bonus_cooldown_mult_base", 0)))) 
     --
     ply.cdr_torrent = garlic_like_reduce_auto_cast_cooldown(ply, ply.cdr_torrent, "dota2_auto_cast_torrent_delay", "torrent")
     ply.cdr_lightning_bolt = garlic_like_reduce_auto_cast_cooldown(ply, ply.cdr_lightning_bolt, "dota2_auto_cast_lightning_bolt_delay", "lightning_bolt")
@@ -279,14 +283,14 @@ function garlic_like_reduce_auto_cast_cooldown(ply, cdr_temp, convar, name)
     return cdr_temp
 end
 
-local function garlic_like_xp_gain(ply, xp_amount, xp_type)
+function garlic_like_xp_gain(ply, xp_amount, xp_type)
     net.Start(gl .. "xp_gained")
     net.WriteInt(xp_amount, 32)
     net.WriteString(xp_type)
     net.Send(ply)
 end
 
-local function garlic_like_update_database(ply, name, number, upgrades_table)
+function garlic_like_update_database(ply, name, number, upgrades_table)
     if name ~= "" or name == nil then
         ply:SetNWInt(gl .. name, ply:GetNWInt(gl .. name) + number)
         ply:SetPData(gl .. "database_" .. name, ply:GetNWInt(gl .. name, 0))
@@ -295,7 +299,7 @@ local function garlic_like_update_database(ply, name, number, upgrades_table)
     if upgrades_table ~= nil then end -- ply:SetPData(gl .. "upgrades_PData", upgrades_table)   -- PrintTable(upgrades_table)
 end
 
-local function garlic_like_reset_stats(ply)
+function garlic_like_reset_stats(ply)
     RunConsoleCommand("dota2_reset")
     RunConsoleCommand("dota2_reset_cl")
     RunConsoleCommand("dota2_cooldown_diabolic_edict", "0")
@@ -380,6 +384,10 @@ local function garlic_like_reset_stats(ply)
         end
     end 
 
+    if timer.Exists(gl .. "breaktime_timer") then 
+        timer.Remove(gl .. "breaktime_timer")
+    end
+
     --BREAK 
     ply:SetNWBool(gl .. "voted_skip_break", false)
     -- DASH
@@ -398,9 +406,9 @@ local function garlic_like_reset_stats(ply)
     net.Start(gl .. "reset_cl")
     net.Send(ply)
     --
-    -- upgrade_str(ply, ply:GetNWInt(gl .. "STR"), 155)
-    -- upgrade_agi(ply, ply:GetNWInt(gl .. "AGI"), 155)
-    -- upgrade_int(ply, ply:GetNWInt(gl .. "INT"), 155)
+    -- garlic_like_upgrade_str(ply, ply:GetNWInt(gl .. "STR"), 155)
+    -- garlic_like_upgrade_agi(ply, ply:GetNWInt(gl .. "AGI"), 155)
+    -- garlic_like_upgrade_int(ply, ply:GetNWInt(gl .. "INT"), 155)
 end
 
 function garlic_like_get_nearby_point(ply) 
@@ -419,8 +427,8 @@ function garlic_like_get_nearby_point(ply)
     local final_points = {}
     -- PrintTable(nav_areas)
 
-    filtered_pos_min = navmesh.Find(ply_pos, 1000, 200, 200)
-    filtered_pos_max = navmesh.Find(ply_pos, 3000, 200, 200) 
+    filtered_pos_min = navmesh.Find(ply_pos, 1000, 300, 300)
+    filtered_pos_max = navmesh.Find(ply_pos, 3000, 300, 300) 
     
     for k, area in pairs(filtered_pos_max) do 
         if not table.HasValue(filtered_pos_min, area) then 
@@ -454,14 +462,23 @@ function garlic_like_spawn_enemy(ply, spawn_class_override)
 
     -- PrintTable(tbl_used_enemy_preset)
 
-    for k, v in pairs(tbl_used_enemy_preset) do 
-        if IsNumBetween(random_number, v.weight_min, v.weight_max) then 
-            -- PrintTable(v)
-            enemy_class = v.class
+    local function get_enemy_class()
+        for k, v in pairs(tbl_used_enemy_preset) do 
+            if IsNumBetween(random_number, v.weight_min, v.weight_max) then 
+                -- PrintTable(v)
+                enemy_class = v.class
+            end
         end
     end
 
-    -- print("ENEMY CLASS IS: " .. enemy_class)
+    get_enemy_class()
+
+    local loop_num = 0
+
+    while (enemy_class == "npc_zombie" and loop_num < 200) do 
+        loop_num = loop_num + 1
+        get_enemy_class()
+    end 
 
     if spawn_class_override ~= "enemy" then 
         enemy_class = spawn_class_override
@@ -488,14 +505,14 @@ function garlic_like_spawn_enemy(ply, spawn_class_override)
     end
 end
 
-local function enemy_shield_recharge(ent)
+function garlic_like_enemy_shield_recharge(ent)
     timer.Create(gl .. "enemy_shield_recharging_" .. ent:EntIndex(), 0, 100, function()
         if not ent.enemy_is_able_to_recharge or ent:GetNWInt(gl .. "enemy_shield") >= ent:GetNWInt(gl .. "enemy_shield_max") then return end
         ent:SetNWInt(gl .. "enemy_shield", math.min(ent:GetNWInt(gl .. "enemy_shield_max"), ent:GetNWInt(gl .. "enemy_shield") + ent:GetNWInt(gl .. "enemy_shield_max") * 0.01))
     end)
 end
 
-local function reset_gun_bonuses(ply, weapon_name) 
+function garlic_like_reset_gun_bonuses(ply, weapon_name) 
     for k, element in pairs(tbl_gl_elements) do
         ply:SetNWBool(gl .. weapon_name .. element, false)
     end
@@ -917,11 +934,11 @@ net.Receive(gl .. "chose_upgrade", function(len, ply)
         INT = ply:GetNWInt(gl .. "INT", 1)
 
         if upgrade_name == "STR" then
-            upgrade_str(ply, STR, statboost_num)
+            garlic_like_upgrade_str(ply, STR, statboost_num)
         elseif upgrade_name == "AGI" then
-            upgrade_agi(ply, AGI, statboost_num)
+            garlic_like_upgrade_agi(ply, AGI, statboost_num)
         elseif upgrade_name == "INT" then
-            upgrade_int(ply, INT, statboost_num)
+            garlic_like_upgrade_int(ply, INT, statboost_num)
         end
 
         -- print("STAT TYPE " .. upgrade_name)
@@ -929,59 +946,13 @@ net.Receive(gl .. "chose_upgrade", function(len, ply)
 
     if upgrade_type == "item_statboost" then
         if upgrade_name == "xp orb" then
-            ply:SetNWFloat(gl .. "bonus_xp_mult", 1 + statboost_num)
-
-            timer.Simple(0.1, function()
-                ply:SetNWFloat(gl .. "bonus_xp_gain", INT * 0.003 * ply:GetNWFloat(gl .. "bonus_xp_mult"))
-            end)
+            ply:SetNWFloat(gl .. "bonus_xp_mult", 1 + statboost_num) 
         elseif upgrade_name == "muscles" then
-            ply:SetNWFloat(gl .. "bonus_hp_boost_mult", 1 + statboost_num)
-
-            timer.Simple(0.1, function()
-                if ply.old_hp_boost == nil then
-                    ply.old_hp_boost = 0
-                end
-
-                ply.hp_boost = math.Round(math.max(0, STR / 1) * ply:GetNWFloat(gl .. "bonus_hp_boost_mult", 1))
-
-                if ply.hp_boost > ply.old_hp_boost then
-                    ply:SetMaxHealth(ply:GetMaxHealth() + (ply.hp_boost - ply.old_hp_boost))
-                end
-
-                ply.old_hp_boost = ply.hp_boost
-                ply:SetNWInt(gl .. "hp_boost", ply.hp_boost)
-            end)
+            ply:SetNWFloat(gl .. "bonus_hp_boost_mult", 1 + statboost_num) 
         elseif upgrade_name == "sword" then
-            ply:SetNWFloat(gl .. "bonus_damage_mult", 1 + statboost_num)
-
-            timer.Simple(0.1, function()
-                ply:SetNWFloat(gl .. "bonus_damage", STR * 0.005 * ply:GetNWFloat(gl .. "bonus_damage_mult"))
-            end)
+            ply:SetNWFloat(gl .. "bonus_damage_mult", 1 + statboost_num) 
         elseif upgrade_name == "crystal" then
-            ply:SetNWFloat(gl .. "bonus_stat_mult_crystal", 1 + statboost_num)
-            -- 
-            STR = ply:GetNWInt(gl .. "STR", 1)
-            AGI = ply:GetNWInt(gl .. "AGI", 1)
-            INT = ply:GetNWInt(gl .. "INT", 1)
-            upgrade_str(ply, STR, 0)
-            upgrade_agi(ply, AGI, 0)
-            upgrade_int(ply, INT, 0)
-
-            --
-            timer.Simple(0.1, function()
-                if ply.old_hp_boost == nil then
-                    ply.old_hp_boost = 0
-                end
-
-                ply.hp_boost = math.Round(math.max(0, STR / 1) * ply:GetNWFloat(gl .. "bonus_hp_boost_mult", 1))
-
-                if ply.hp_boost > ply.old_hp_boost then
-                    ply:SetMaxHealth(ply:GetMaxHealth() + (ply.hp_boost - ply.old_hp_boost))
-                end
-
-                ply.old_hp_boost = ply.hp_boost
-                ply:SetNWInt(gl .. "hp_boost", ply.hp_boost)
-            end)
+            ply:SetNWFloat(gl .. "bonus_stat_mult_crystal", 1 + statboost_num) 
         elseif upgrade_name == "glasses" then
             ply:SetNWFloat(gl .. "bonus_critical_chance_mult", (1 + statboost_num) * (1 + ply:GetNWFloat(gl .. rh .. "hawkeye_sight_mul", 0)))
             ply:SetNWFloat(gl .. "bonus_critical_chance", AGI * 0.007 * ply:GetNWFloat(gl .. "bonus_critical_chance_mult", 1))
@@ -990,6 +961,12 @@ net.Receive(gl .. "chose_upgrade", function(len, ply)
         elseif upgrade_name == "shield" then
             ply:SetNWFloat(gl .. "bonus_shield", statboost_num)
         end
+        
+        timer.Simple(0.1, function()
+            garlic_like_upgrade_str(ply, STR, 0)
+            garlic_like_upgrade_agi(ply, AGI, 0)
+            garlic_like_upgrade_int(ply, INT, 0)
+        end)
     end
 
     if upgrade_type == "relic" then
@@ -1000,8 +977,8 @@ net.Receive(gl .. "chose_upgrade", function(len, ply)
 
         if upgrade_name_2 == "hawkeye_sight" then
             ply:SetNWFloat(gl .. "bonus_critical_chance_mult", (1 + statboost_num) * (1 + ply:GetNWFloat(gl .. rh .. "hawkeye_sight_mul", 0)))
-            upgrade_str(ply, STR, 0)
-            upgrade_agi(ply, AGI, 0)
+            garlic_like_upgrade_str(ply, STR, 0)
+            garlic_like_upgrade_agi(ply, AGI, 0)
         end
 
         --* RELIC UNLOCKABLES
@@ -1085,7 +1062,7 @@ net.Receive(gl .. "choose_weapon", function(len, ply)
  
     -- PrintTable(ply.gl_stored_bonused_weapons)
     -- print(ply.gl_weapon_chosen)
-    reset_gun_bonuses(ply, ply.gl_weapon_chosen)
+    garlic_like_reset_gun_bonuses(ply, ply.gl_weapon_chosen)
 
     for class_name, entry in pairs(ply.gl_stored_bonused_weapons) do
         if class_name == ply.gl_weapon_chosen then
@@ -1291,8 +1268,16 @@ hook.Add("Think", gl .. "think_server", function()
                 for k, ent in ipairs(spawned_enemies) do 
                     -- print("DISTANCE FROM ENT TO A PLAYER: " .. ent:GetPos():Distance(table.Random(player.GetAll()):GetPos()))
                     if not IsValid(ent) then continue end 
-                    if ent:GetPos():Distance(table.Random(player.GetAll()):GetPos()) >= 3000 then 
+                    if ent:GetPos():Distance(table.Random(player.GetAll()):GetPos()) >= 3300 then 
                         local point = garlic_like_get_nearby_point()
+                        local loop_num = 0
+                        
+                        while (not point and loop_num < 200) do
+                            point = garlic_like_get_nearby_point()
+                        end
+
+                        if not point then continue end
+
                         ent:SetPos(point + Vector(0, 0, 5))
                     end  
                 end
@@ -1568,7 +1553,7 @@ hook.Add("EntityTakeDamage", gl .. "damage_modifiers", function(ent, dmg)
             ent.enemy_is_able_to_recharge = false
 
             timer.Create("enemy_shield_recharge_" .. ent:EntIndex(), 2, 1, function()
-                enemy_shield_recharge(ent)
+                garlic_like_enemy_shield_recharge(ent)
                 ent.enemy_is_able_to_recharge = true
             end)
         end
@@ -1740,7 +1725,7 @@ hook.Add("EntityTakeDamage", gl .. "damage_modifiers", function(ent, dmg)
         dmg:SetDamage(dmg:GetDamage() - ply:GetNWInt(gl .. "bonus_resistance_flat", 0) * ply:GetNWFloat(gl .. ply_wep_class .. "resistance_flatdmg", 1))
         dmg:ScaleDamage((1 - ply:GetNWFloat(gl .. "bonus_resistance", 0)) * (ply:GetNWFloat(gl .. ply_wep_class .. "resistance", 1)) * ply.mana_resistance * ply.block_resistance * ply.evasion * (1 + GetGlobalFloat(gl .. "enemy_modifier_damage", 0)) * (1 - ply:GetNWFloat(gl .. "bonus_armor", 0)) * ply:GetNWFloat(gl .. ply_wep_class .. "damage", 1))
 
-        if ply:GetNWBool(gl .. rh .. "blade_mail") then
+        if ply:GetNWBool(gl .. rh .. "blade_mail") and ply ~= attacker then
             local blade_mail_damage = DamageInfo()
             blade_mail_damage:SetDamage(ply:Health() * ply:GetNWFloat(gl .. rh .. "blade_mail_mul"))
             blade_mail_damage:SetDamagePosition(attacker:EyePos())
@@ -1909,7 +1894,7 @@ hook.Add("OnEntityCreated", gl .. "entity_creation", function(ent)
                 local max_modifiers = math.max(1, math.Round(GetGlobalBool(gl .. "minutes", 0) / 3))
                 -- local max_modifiers = 10
 
-                if ent:GetNWBool(gl .. "is_spawned_enemy") then 
+                if not ent:GetNWBool(gl .. "is_spawned_enemy") then 
                     for k, mod in RandomPairs(tbl_gl_enemy_modifiers) do   
                         -- print(k)
                         if math.random() < 0.08 and ent.gl_modifier_num < max_modifiers then 
@@ -2504,9 +2489,9 @@ concommand.Add(gl .. "debug_spawn_crate", function(ply, cmd, args, argStr)
 end)
 
 concommand.Add(gl .. "debug_100_stats", function(ply, cmd, args, argStr)
-    upgrade_str(ply, STR, 100)
-    upgrade_agi(ply, AGI, 100)
-    upgrade_int(ply, INT, 100)
+    garlic_like_upgrade_str(ply, STR, 100)
+    garlic_like_upgrade_agi(ply, AGI, 100)
+    garlic_like_upgrade_int(ply, INT, 100)
 end)
 
 concommand.Add(gl .. "debug_9999_materials", function(ply, cmd, args, argStr)
@@ -2549,9 +2534,9 @@ concommand.Add(gl .. "spawn_tf2_ultimate_base_entity", function(ply, cmd, args, 
 end)
 
 concommand.Add(gl .. "dash", function(ply, cmd, args, argStr)
-    if ply:GetNWBool(gl .. "dash_available") == true then
-        ply.garlic_like_groundDashSpeed = 2400
-        ply.garlic_like_airDashSpeed = 750
+    if ply:GetNWBool(gl .. "dash_available") then
+        ply.garlic_like_groundDashSpeed = 3000
+        ply.garlic_like_airDashSpeed = 880
         ply.garlic_like_dash_direction = 0
         ply.garlic_like_pdBonusSpeed = 1
         ply:SetNWFloat(gl .. "dash_cooldown", 1 * (1 - ply:GetNWFloat(gl .. rh .. "advanced_jogger_mul", 0)))
@@ -2614,20 +2599,39 @@ concommand.Add(gl .. "dash", function(ply, cmd, args, argStr)
     end
 end)
 
+concommand.Add(gl .. "debug_print_preset_tbl", function(ply, cmd, args, argStr) 
+    if argStr then 
+        if not tbl_gl_presets[argStr] then 
+            print("PRESET IS NOT LOADED!")
+        else
+            PrintTable(tbl_gl_presets[argStr])
+        end
+    else
+        PrintTable(tbl_gl_presets)
+    end
+end)
+
 concommand.Add(gl .. "start", function(ply, cmd, args, argStr)
     if not ply:IsSuperAdmin() then return end 
-    local preset = "data/garlic_like/" .. GetConVar(gl .. "enemy_preset"):GetString() 
+    -- local preset = "data/garlic_like/" .. GetConVar(gl .. "enemy_preset"):GetString()
+    local preset = GetConVar(gl .. "enemy_preset"):GetString() 
 
-    if file.Exists(preset, "GAME") then
+    -- if file.Exists(preset, "GAME") then
+    if tbl_gl_presets[preset] then
         -- ply:ConCommand("zinv 1")
         ply:ConCommand(gl .. "enable_timer 1")
         SetGlobalBool(gl .. "show_end_screen", false)
         SetGlobalBool(gl .. "match_running", true)
         -- print("FILE EXISTS!")
 
-        tbl_used_enemy_preset = util.JSONToTable(file.Read(preset, "GAME")) 
+        -- tbl_used_enemy_preset = util.JSONToTable(file.Read(preset, "GAME")) 
+        tbl_used_enemy_preset = tbl_gl_presets[preset]
         enemy_preset_max_weight = 0
+
+        -- PrintTable(tbl_gl_presets[preset])
                 
+        if not tbl_used_enemy_preset then return end
+
         for k, v in ipairs(tbl_used_enemy_preset) do             
             v.weight = v.weight_start
 
@@ -2645,9 +2649,9 @@ concommand.Add(gl .. "start", function(ply, cmd, args, argStr)
         end
 
         garlic_like_check_enemy_spawn_chances() 
-        upgrade_str(ply, nil, tonumber(ply:GetPData(gl .. "bonus_starting_str_base", 0)))
-        upgrade_agi(ply, nil, tonumber(ply:GetPData(gl .. "bonus_starting_agi_base", 0)))
-        upgrade_int(ply, nil, tonumber(ply:GetPData(gl .. "bonus_starting_int_base", 0)))
+        garlic_like_upgrade_str(ply, nil, tonumber(ply:GetPData(gl .. "bonus_starting_str_base", 0)))
+        garlic_like_upgrade_agi(ply, nil, tonumber(ply:GetPData(gl .. "bonus_starting_agi_base", 0)))
+        garlic_like_upgrade_int(ply, nil, tonumber(ply:GetPData(gl .. "bonus_starting_int_base", 0)))
 
         -- PrintTable(tbl_used_enemy_preset)
     else 
