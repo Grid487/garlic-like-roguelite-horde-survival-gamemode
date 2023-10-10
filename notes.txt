@@ -1,0 +1,68 @@
+List To Do Keywords:
+* Element probability and element inscribing ~6 hours
+* Item upgrading ~3 hours
+* Relic upgrading ~3 hours
+* Meta progression through gacha (unlock new items, relics, and skills) ~14 hours
+idea:   
+Duplicates turn into "Fragments" to upgrade the item's star level.
+There will be 5 yellow star levels and another 5 red / carnage star levels.
+to transcend a 5 yellow star item to a 1 carnage star, you need gold, fragments, and carnage essences (can be obtained from killing enemies post 10 mins.)
+excess fragments can be turned into gold.
+
+* WIP Unlockable item and relic slots ~2 hours
+* [NEXT 3] WIP Fix ult cooldown ~1 hour
+* 4 new active spells, and rework existing ~6 hours
+* Final life death screen overview  ~3 hours
+* Premium currency (gems) for gacha ~8 hours
+* [NEXT 4] WIP Reaching level 50 unlocks Carnage upgrades (includes item uniques) ~4 hours
+* WIP Meta upgrades (upgrades outside the match)
+* HUD tbl_gl_elements for buffs/ debuffs ~4 hours
+* Crystal mining event ~2 hours
+* Weapon crafting ~6 hours
+* [NEXT 6] WIP (DONE HEALTHBAR AND LIVES) Polish HUD ~4 hours
+* WIP Unlockables ~4 hours 
+* Levellable items / starring up -- Enemies have a small chance to drop "Fragments" which can be used to upgrade an item's star level (meta upgrade) ~3 hours
+* Rework XP gain to resemble warframe affinity gain ~4 hours
+* Enemy spawn indicators 
+* Barrels drop bonus items like in VS.
+* Title systems, obtained from unlockables. Titles gives differing stat boosts and effects.
+* ENCUMBERING modifier, enemy slows player movespeed by 25% for 3 seconds. 
+* LIGHTNING modifier explosion slows player movespeed by 75% for 0.5 second.
+
+~. DONE Fix cooldown speeds!
+~. DONE Work on relics unlockables serverside.
+~. DONE Enemy modifiers gives more rewards (xp, drops, money) 
+~. DONE Crystal nodes
+~. DONE Weapon Crates  
+~. DONE Weapon Rarity Fusing
+~. DONE WIP Stat rerolling 
+IDEAS: 
+ 
+1. CSGO Weapon Crate
+--> RARITIES
+Crates have rarities, a rare crate will only offer weapons of rarity rare and up (no uncommon and below).
+
+combination tbl_gl_elements:
+
+|POISONED + ON FIRE| -> release GAS EXPLOSION, damage reduction raised to 65%.
+- poisons enemies.
+- already poisoned enemies have their stacked damage number multiplied by x1.1
+
+|ON FIRE + ELECTROCUTED| -> enemy gets burnt by blue fire for 3 seconds. (refreshable)
+- blue fire deals damage every 0.2 second.
+- blue fire deals 30% of player max health as damage.
+
+|ON FIRE + ELECTROCUTED + POISONED| -> sends out poison lightning bolts to nearby targets
+- on hit, create a GAS EXPLOSION.
+- 1 second cooldown (stored in the player attribute).
+
+every time the player releases the alt key a brief showcase of the weapon's print name and stats shows on the right hand side of the screen for 3 seconds.
+   
+2. Ultimate Skill
+Active skills that can be activated with Mouse3.
+
+etc. ideas:
+ 
+- random totems / statues appear in the map giving temporary boosts (damage, defense reduction, mana regen boost etc)
+- chance for enemies to drop booster entities (damage, xp, damage reduction)
+
