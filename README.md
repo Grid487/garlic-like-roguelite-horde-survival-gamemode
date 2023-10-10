@@ -6,7 +6,7 @@ A Garry's Mod horde survival gamemode featuring roguelite features such as in-ma
 
 
 
-## Features
+## Prerelease Features
 
 - XP system to upgrade your player character through the run
 
