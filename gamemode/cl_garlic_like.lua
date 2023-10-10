@@ -530,7 +530,7 @@ timer.Simple(2, function()
         for k, wep in SortedPairs(weapons.GetList()) do
             str_1, str_2 = string.find(wep.ClassName, "base") 
 
-            if (string.match(wep.ClassName, "arccw") and not string.match(wep.ClassName, "base")) then 
+            if (string.match(wep.ClassName, "arccw") and not string.match(wep.ClassName, "base") and not string.find(wep.ClassName, "arccw_g18_garlic_like")) then 
                 table.insert(tbl_valid_weapons, wep)
             end
 
@@ -1133,7 +1133,7 @@ timer.Simple(2, function()
         wep_choice.wep_bonuses = {}
 
         if wep_choice.wep_bonuses_amount > 0 then
-            local rarity_rand_modifier = math.Remap(garlic_like_rarity_to_num(wep_choice.wep_rarity), 1, 7, 1, 2)
+            local rarity_rand_modifier = math.Remap(garlic_like_rarity_to_num(wep_choice.wep_rarity), 1, 7, 1.5, 2)
 
             for i = 1, wep_choice.wep_bonuses_amount do
                 local get_tbl_bonus = tbl_gl_bonuses_weapons[math.random(1, #tbl_gl_bonuses_weapons)]
@@ -1190,7 +1190,7 @@ timer.Simple(2, function()
             --
             garlic_like_get_weapon(wep_choice, tbl_valid_weapons, "ROLL", rarity)
 
-            if wep_choice.loop > 200 then
+            if wep_choice.loop > 50 then
                 garlic_like_get_weapon(wep_choice, tbl_valid_weapons, "FALLBACK", rarity)
             end
         end
@@ -2912,10 +2912,10 @@ timer.Simple(2, function()
                 garlic_like_upgrades_cleared = table.ClearKeys(garlic_like_upgrades)
                 Chance_upgrade_choice = math.random(1, 100)
                 local loop = 1
-                local chance_stats = (0.25 * 100)
-                local chance_items = chance_stats + (0.15 * 100)
-                local chance_skills = chance_items + (0.5 * 100)
-                local chance_relics = chance_skills + (0.1 * 100)
+                local chance_stats = (0.5 * 100)
+                local chance_items = chance_stats + (0.25 * 100)
+                local chance_skills = chance_items + (0.1 * 100)
+                local chance_relics = chance_skills + (0.15 * 100)
 
                 -- print("CHANCE UPGRADE CHOICE " .. Chance_upgrade_choice)
                 if Chance_upgrade_choice <= chance_stats then
@@ -2927,7 +2927,7 @@ timer.Simple(2, function()
                         loop = loop + 1
                         -- print("Loop A " .. loop)
 
-                        if loop > 200 then
+                        if loop > 50 then
                             choice_panel.upgrade = garlic_like_upgrades[table.Random(tbl_id_upgrades_statboost)]
                         end
 
@@ -2940,7 +2940,7 @@ timer.Simple(2, function()
                         loop = loop + 1
                         -- print("Loop B " .. loop)
 
-                        if loop > 200 then
+                        if loop > 50 then
                             choice_panel.upgrade = garlic_like_upgrades[table.Random(tbl_id_upgrades_statboost)]
                         end
 
@@ -2953,7 +2953,7 @@ timer.Simple(2, function()
                         loop = loop + 1
                         -- print("Loop C " .. loop)
 
-                        if loop > 200 then
+                        if loop > 50 then
                             choice_panel.upgrade = garlic_like_upgrades[table.Random(tbl_id_upgrades_statboost)]
                         end
 
@@ -3743,7 +3743,7 @@ timer.Simple(2, function()
                 level = level + 1
                 pending_level_ups = pending_level_ups + 1
                 xp_total = xp_total - xp_to_next_level
-                xp_to_next_level = math.Round(xp_to_next_level * 1.07 + 125 * (1.1 + level / 10))
+                xp_to_next_level = math.Round(xp_to_next_level * 1.08 + 400 * (1.1 + level / 9))
 
                 if i == 1 then
                 elseif i >= 2 then
@@ -3984,13 +3984,13 @@ timer.Simple(2, function()
 
             timer.Simple(0.2, function()
                 if not IsValid(ent) then return end 
-                if ent:GetClass() == gl .. "crystal_cluster" then 
+                if ent:GetClass() == gl .. "crystal_cluster" and tbl_crystal_clusters[ent:GetNWString(gl .. "item_rarity")] then 
                     table.insert(tbl_crystal_clusters[ent:GetNWString(gl .. "item_rarity")], 1, ent)
                     -- PrintTable(tbl_crystal_clusters)
                 end
             end)
 
-            if table.HasValue(tbl_gl_entities, ent:GetClass()) then  
+            if table.HasValue(tbl_gl_entities, ent:GetClass()) or string.find(ent:GetClass(), "acwatt") then  
                 if #garlic_like_item_drops_entities > 0 then
                     garlic_like_item_drops_entities = table.ClearKeys(garlic_like_item_drops_entities)
                 end
@@ -4052,6 +4052,10 @@ timer.Simple(2, function()
             else
                 render.DrawBeam(beam_start, beam_end, 1, 0, 1, rarity_color)
             end
+
+            if not rarity then 
+                rarity = "common"
+            end
             
             cam.Start3D2D(Vector(obbcenter.x, obbcenter.y, ent:LocalToWorld(ent:OBBMaxs()).z + 40), Angle(0, angles.y - 90, 90), 0.5)  
             
@@ -4083,7 +4087,8 @@ timer.Simple(2, function()
         if not GetConVar(gl .. "enable"):GetBool() then return end 
         ply = LocalPlayer()
 
-        if ply:KeyDown(IN_SPEED) and ply:KeyDown(IN_ATTACK) and ply:KeyDown(IN_ATTACK2) then
+        if ply:KeyDown(IN_DUCK) and ply:KeyDown(IN_ATTACK) and ply:KeyDown(IN_ATTACK2) then
+            print("EXECUTING ULT")
             if tbl_ult.ult_cooldown > 0 and (tbl_ult.ult_clicked == nil or not tbl_ult.ult_clicked) then
                 tbl_ult.ult_clicked = true
                 -- print("ULTIMATE STILL ON COOLDOWN!")
@@ -4846,7 +4851,7 @@ timer.Simple(2, function()
             show_weapon_stats = true
 
             if stats_menu == "STATS" then
-                if ply:KeyPressed(IN_SPEED) then
+                if ply:KeyPressed(IN_USE) then
                     stats_menu = "SKILLS"
                 end
 
@@ -4967,7 +4972,7 @@ timer.Simple(2, function()
                     -- draw.SimpleText("x" .. math.abs(upgrade.number_addition + upgrade.statboost) .. " " .. upgrade.desc_short, gl .. "font_subtitle", W * (0.112 + i * 0.167) - W * 0.03, H * 0.81, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
                 end
             elseif stats_menu == "SKILLS" then
-                if ply:KeyPressed(IN_SPEED) then
+                if ply:KeyPressed(IN_USE) then
                     stats_menu = "RELICS"
                 end
 
@@ -5050,7 +5055,7 @@ timer.Simple(2, function()
                     surface.DrawOutlinedRect((i * W * 0.2) - W * 0.032, H * 0.62, W * 0.07, W * 0.07, 1)
                 end
             elseif stats_menu == "RELICS" then 
-                if ply:KeyPressed(IN_SPEED) then
+                if ply:KeyPressed(IN_USE) then
                     stats_menu = "STATS"
                 end
  
@@ -5147,14 +5152,15 @@ timer.Simple(2, function()
 
     hook.Add("PreDrawHalos", gl .. "draw_halo", function()
         if not GetConVar(gl .. "enable"):GetBool() then return end 
-        halo.Add(ents.FindByClass(gl .. "weapon_crate_entity"), color_yellow, 1, 1, 1, true, true)
-        halo.Add(ents.FindByClass(gl .. "station_item_fusing"), color_blue, 1, 1, 5, true, true)
-        halo.Add(ents.FindByClass(gl .. "station_weapon_upgrade"), color_blue, 1, 1, 5, true, true)
-        halo.Add(ents.FindByClass(gl .. "item_barrel"), color_yellow, 1, 1, 1, true, true)
-        -- halo.Add(ents.FindByClass(gl .. "crystal_cluster"), color_yellow, 1, 1, 2, true, true)
+        
+        outline.Add(ents.FindByClass(gl .. "weapon_crate_entity"), color_yellow, 0) 
+        outline.Add(ents.FindByClass(gl .. "station_item_fusing"), color_blue, 0)
+        outline.Add(ents.FindByClass(gl .. "station_weapon_upgrade"), color_blue, 0)
+        outline.Add(ents.FindByClass(gl .. "item_barrel"), color_yellow, 0) 
+        
         for rarity, color in SortedPairs(rarity_colors) do  
             if #tbl_crystal_clusters[rarity] > 0 then 
-                halo.Add(tbl_crystal_clusters[rarity], color, 1, 1, 2, true, true)     
+                outline.Add(tbl_crystal_clusters[rarity], color, 0)
             end
         end      
     end)
@@ -5247,25 +5253,7 @@ timer.Simple(2, function()
             button.resize = true
             button.starttime = CurTime() * mod_speed 
         end 
-    end)
-
-    concommand.Add(gl .. "open_spawnmenu", function(ply, cmd, args, argStr) 
-        -- local menu = vgui.Create( "DFrame" )
-        -- menu:SetSize( 1000, 550 )
-        -- menu:Center()
-        -- menu:MakePopup()
-
-        -- local sheet = vgui.Create( "DPropertySheet", menu )
-        -- sheet:Dock( FILL )
-
-        -- for k, v in SortedPairsByMemberValue( spawnmenu.GetCreationTabs(), "Order" ) do
-        --     local panel = v.Function()
-        --     panel:SetParent( sheet )
-
-        --     sheet:AddSheet( k, panel, v.Icon )
-        -- end
-        
-    end)
+    end)  
 
     concommand.Add(gl .. "debug_rearrange_ehb_table", function(ply, cmd, args, argStr)
         local last_dist = 0
@@ -5689,7 +5677,7 @@ timer.Simple(2, function()
 
                     if button_weapon_slot.gl_chosen_weapon ~= "NONE" then
                         ore.rarity_num = garlic_like_rarity_to_num(ore.rarity)
-                        ore.num_needed_material = weapon_tbl.level * 3
+                        ore.num_needed_material = weapon_tbl.level * 5
 
                         if ore.rarity_num > garlic_like_rarity_to_num(weapon_tbl.rarity) then
                             ore.num_needed_material = 0
@@ -5805,7 +5793,7 @@ timer.Simple(2, function()
                 if button_weapon_slot.gl_chosen_weapon == "NONE" then return end 
                 --
                 gold = tonumber(ply:GetNWInt(gl .. "money", 0))
-                price = math.Round(150 * weapon_rarity_num^(1.5 + weapon_tbl.level * 0.2))
+                price = math.Round(150 * weapon_rarity_num^(1.5 + weapon_tbl.level * 0.25))
                 local color_price = color_white 
                 
                 if gold < price then
@@ -6449,8 +6437,7 @@ timer.Simple(2, function()
     concommand.Add(gl .. "print_cl_inventory", function(ply, cmd, args, argStr)
         -- print("\nGARLIC LIKE PRINTING CLIENTSIDE INVENTORY")
         -- PrintTable(garlic_like_items_held)
-    end) 
-
+    end)  
 end)
 --
     -- local rainbowRT = GetRenderTarget("rainbowRT", 1024, 1024)

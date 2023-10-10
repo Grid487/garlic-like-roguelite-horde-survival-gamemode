@@ -4,13 +4,15 @@ if SERVER then
     CreateConVar(gl .. "enable", 1, FCVAR_ARCHIVE, "enables / disables all of garlic-like's systems.", 0, 1)
     CreateConVar(gl .. "enemy_preset", "preset_1.txt", FCVAR_ARCHIVE, "", 0, 0)
     CreateConVar(gl .. "mana_usage_mul", 0.75, FCVAR_ARCHIVE, "", 0, 1)
-    CreateConVar(gl .. "reset_stats", 0, FCVAR_ARCHIVE, "", 0, 1)
+    CreateConVar(gl .. "reset_stats_after_dying", 0, FCVAR_ARCHIVE, "", 0, 1)
     CreateConVar(gl .. "enable_timer", 0, FCVAR_NONE, "", 0, 1)
     CreateConVar(gl .. "timer_speed_mult", 1, FCVAR_ARCHIVE, "", 0, 10)
     CreateConVar(gl .. "damage_random_min_maxes_enable", 1, FCVAR_ARCHIVE, "", 0, 1)
     CreateConVar(gl .. "max_enemies_spawned", 25, FCVAR_ARCHIVE, "", 1, 100)
     CreateConVar(gl .. "debug_crate_drops", 1, FCVAR_ARCHIVE, "", 0, 1)
     CreateConVar(gl .. "debug_gem_crate_drops", 1, FCVAR_ARCHIVE, "", 0, 1)
+    CreateConVar(gl .. "global_enemy_hp_mod_num", 1, FCVAR_ARCHIVE, "", 0, 100)
+    CreateConVar(gl .. "global_enemy_dmg_mod_num", 1, FCVAR_ARCHIVE, "", 0, 100)
     -- dota2 convars
     CreateConVar("dota2_affect_players", 0, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 1)
     CreateConVar("dota2_cooldown_diabolic_edict", 10, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 100)
@@ -35,7 +37,7 @@ if SERVER then
 end
 
 if CLIENT then 
-    -- dota 2 convars 
+    -- dota 2 convars so that the code down below wont give an error
     CreateClientConVar("dota2_auto_cast_diabolic_edict", 0, true, true, "", 0, 1)
     CreateClientConVar("dota2_auto_cast_diabolic_edict_delay", 0.25, true, true, "", 0.01, 99)
     CreateClientConVar("dota2_auto_cast_torrent", 0, true, true, "", 0, 1)
@@ -81,6 +83,18 @@ PrecacheParticleSystem("jakiro_base_attack_fire_launch")
 PrecacheParticleSystem("jakiro_liquid_fire_explosion")
 PrecacheParticleSystem("disruptor_thunder_strike_buff")
 PrecacheParticleSystem("disruptor_thuderstrike_aoe_area")
+
+game.AddAmmoType( {
+	name = gl .. "pistol_ammo", -- Note that whenever picked up, the localization string will be '#BULLET_PLAYER_556MM_ammo'
+	dmgtype = DMG_BULLET, 
+	tracer = TRACER_LINE,
+	plydmg = 0, -- This can either be a number or a ConVar name.
+	npcdmg = 0, -- Ditto.
+	force = 2000,
+	maxcarry = 9999, -- Ditto.
+	minsplash = 10,
+	maxsplash = 5
+} )
 
 --========================================================================================================
 --Loads the Team Fortress 2 particles into Garry's Mod
@@ -365,7 +379,7 @@ tbl_gl_bonuses_weapons = {
         modifier = 0.08,
         upgrade_mul = 1.09,
         max_mul = 0.95,
-        desc = " Reduced Damage Taken",
+        desc = " Damage Reduction Multiplier",
         type_mul = -1
     },
     [3] = {

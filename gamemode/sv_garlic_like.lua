@@ -56,6 +56,8 @@ local rarity_starting_num = 1
 local rarity_weights_sum = 0
 local nav_areas
 
+local global_enemy_hp_modifier_stacks = 0
+
 local rarity_weights = {
     ["poor"] = {
         min = 0,
@@ -124,6 +126,9 @@ tbl_gl_elements = {
 }
 
 tbl_gl_presets = {}
+
+local arcw_atts_init = false
+tbl_gl_arccw_atts = {}
  
 cvars.AddChangeCallback(gl .. "enable", function(name, old, new) end)
 
@@ -324,6 +329,7 @@ function garlic_like_reset_stats(ply)
     delay_ply = 0
     delay_rapid = 0
     delay_timer = 0
+    global_enemy_hp_modifier_stacks = 0
     --
     ply:SetMaxHealth(100)
     --
@@ -427,25 +433,29 @@ function garlic_like_get_nearby_point(ply)
     local final_points = {}
     -- PrintTable(nav_areas)
 
-    filtered_pos_min = navmesh.Find(ply_pos, 1000, 300, 300)
-    filtered_pos_max = navmesh.Find(ply_pos, 3000, 300, 300) 
+    filtered_pos_min = navmesh.Find(ply_pos, 1000, 300, 200)
+    filtered_pos_max = navmesh.Find(ply_pos, 3000, 300, 200) 
+
+    -- PrintTable(filtered_pos_min)
+    -- PrintTable(filtered_pos_max)
     
     for k, area in pairs(filtered_pos_max) do 
         if not table.HasValue(filtered_pos_min, area) then 
             table.insert(final_points, #final_points, area)
         end
     end
+
+    -- print("FINAL POINTS: ")
+    -- PrintTable(final_points)
     
     local pre_point = final_points[math.random(1, #final_points)]
 
-    local loop_num = 0
+    local loop_num = 0 
 
-    while (not pre_point and loop_num < 100) do
-        loop_num = loop_num + 1
-        pre_point = final_points[math.random(1, #final_points)]
-    end
+    if not pre_point then print("PRE POINT NOT FOUND!") return end
 
-    if not pre_point then return end
+    print("SUCCESFULLY FOUND A SPAWNING POINT FOR THE ENEMY!")
+
     local point = pre_point:GetRandomPoint() 
     --
     return point
@@ -455,7 +465,9 @@ function garlic_like_spawn_enemy(ply, spawn_class_override)
     if #spawned_enemies > GetConVar(gl .. "max_enemies_spawned"):GetInt() then return end
     --
     local ply_pos = ply:GetPos() 
-    local point = garlic_like_get_nearby_point(ply)
+    local point = garlic_like_get_nearby_point(ply) 
+    local loop_num = 0
+     
     -- print(point)
     local enemy_class = "npc_zombie" 
     local random_number = math.random(1, enemy_preset_max_weight)
@@ -465,40 +477,37 @@ function garlic_like_spawn_enemy(ply, spawn_class_override)
     local function get_enemy_class()
         for k, v in pairs(tbl_used_enemy_preset) do 
             if IsNumBetween(random_number, v.weight_min, v.weight_max) then 
-                -- PrintTable(v)
-                enemy_class = v.class
+                -- PrintTable(v) 
+                return v.class
             end
         end
     end
 
-    get_enemy_class()
+    enemy_class = get_enemy_class()
 
     local loop_num = 0
 
-    while (enemy_class == "npc_zombie" and loop_num < 200) do 
+    repeat
+        enemy_class = get_enemy_class()
         loop_num = loop_num + 1
-        get_enemy_class()
-    end 
+        if loop_num > 50 then print("LOOP EXCEED") return end
+    until ((enemy_class and enemy_class ~= "npc_zombie"))
+
+    if not enemy_class then enemy_class = "npc_zombie" end 
 
     if spawn_class_override ~= "enemy" then 
         enemy_class = spawn_class_override
     end
 
-    -- print("ENEMY CLASS IS: " .. enemy_class)
-
-    --! add loop to keep looping until point is not nil!!!    
-    local loop_num = 0
-
-    while (not point) do
-        loop_num = loop_num + 1 
-        if loop_num >= 200 then return end 
-        point = garlic_like_get_nearby_point(ply)
-    end
+    -- print("ENEMY CLASS IS: " .. enemy_class) 
+    if not point then print("NO POINT FOUND!") return end
  
     local enemy = ents.Create(enemy_class)
     enemy:Spawn()
     enemy:SetPos(point)
     enemy:SetNWBool(gl .. "is_spawned_enemy", true)
+
+    print("ENEMY SUCCESSFULLY SPAWNED!")
 
     if spawn_class_override == "enemy" then 
         table.insert(spawned_enemies, enemy) 
@@ -1108,21 +1117,7 @@ hook.Add("PlayerSwitchWeapon", gl .. "check_switch", function(ply, old_wep, new_
         ply.cdr_diabolic_edict = garlic_like_reduce_auto_cast_cooldown(ply, ply.cdr_diabolic_edict, "dota2_auto_cast_diabolic_edict_delay", "diabolic_edict")
         ply.cdr_magic_missile = garlic_like_reduce_auto_cast_cooldown(ply, ply.cdr_magic_missile, "dota2_auto_cast_magic_missile_delay", "magic_missile")
     end)
-
-    --[[ 
-        TODO: WHEN SWITCHING WEAPON
-        * 1. get current ddelay / cooldown number, store it.
-        * 2. get the live / actual convar and multiply it with cooldown_speed
-        !! problems arise when switching weapons !!
-        * 3. when switching weapon, in one tick change the live ddelay value with the stored value
-        * 4. repeat steps 1 and 2.
-        --
-        TODO: WHEN UPGRADING INT
-        * 1. upgrade the cooldown values stored in the table
-        * 2. call the function above
-            !! THIS IS A HORRIBLE ALGO THAT FORGETS ABOUT THE TABLE WHEN USING THE WEP UPGRADE VALUE !!
-        
-        --]]
+ 
     do
     end
 end)
@@ -1143,6 +1138,8 @@ hook.Add("PlayerInitialSpawn", gl .. "player_spawn", function(ply)
             -- print("TOTAL DEATHS NOT INIT")
             ply:SetPData(gl .. "total_deaths", 0)
         end
+
+        --* fill up arccw att tbl
     end)
 end)
 
@@ -1171,6 +1168,8 @@ hook.Add("PlayerSpawn", gl .. "player_spawn", function(ply)
         ply:SetSlowWalkSpeed(ply:GetWalkSpeed())
         ply:SetWalkSpeed(ply:GetRunSpeed())
 
+        ply:Give("arccw_g18_garlic_like")
+
         --* RESET UNLOCKABLES 
         -- for k, data in SortedPairs(tbl_gl_character_stats) do 
             -- only read entries that are unlockables
@@ -1184,7 +1183,7 @@ hook.Add("PlayerSpawn", gl .. "player_spawn", function(ply)
         end)
     end)
 
-    if GetConVar(gl .. "reset_stats"):GetInt() > 0 then
+    if GetConVar(gl .. "reset_stats_after_dying"):GetInt() > 0 then
         timer.Simple(0.1, function()
             garlic_like_reset_stats(ply)
         end)
@@ -1212,6 +1211,8 @@ hook.Add("Think", gl .. "think_server", function()
             for k, ent in pairs(ents.FindInSphere(ply:GetPos(), 100)) do 
                 if ent:GetClass() == gl .. "wep_crystal" and ent:GetNWBool(gl .. "settled") then 
                     ent:StartTouch(ply)
+                elseif string.find(ent:GetClass(), "acwatt") and ent:GetNWBool(gl .. "settled_2") then 
+                    ent:Use(ply)
                 end
             end
         end
@@ -1280,13 +1281,12 @@ hook.Add("Think", gl .. "think_server", function()
                     if not IsValid(ent) then continue end 
                     if ent:GetPos():Distance(table.Random(player.GetAll()):GetPos()) >= 3300 then 
                         local point = garlic_like_get_nearby_point()
-                        local loop_num = 0
-                        
-                        while (not point and loop_num < 200) do
-                            point = garlic_like_get_nearby_point()
-                        end
+                        local loop_num = 0 
 
-                        if not point then continue end
+                        if not point then 
+                            print("NO RELOCATE POINT FOUND!") 
+                            continue 
+                        end
 
                         ent:SetPos(point + Vector(0, 0, 5))
                     end  
@@ -1366,8 +1366,10 @@ hook.Add("Think", gl .. "think_server", function()
 
             --* EVERY 30 SECONDS, BUFF THE ENEMY STATS
             if seconds % 30 == 0 then 
-                SetGlobalFloat(gl .. "enemy_modifier_hp", ((GetGlobalFloat(gl .. "enemy_modifier_hp", 0) + 0.8)^1.011 ) * 1.04)
-                SetGlobalFloat(gl .. "enemy_modifier_damage", (GetGlobalFloat(gl .. "enemy_modifier_damage", 0) + 0.11) * 1.085)
+                global_enemy_hp_modifier_stacks = global_enemy_hp_modifier_stacks + 1
+                local gehms = global_enemy_hp_modifier_stacks
+                SetGlobalFloat(gl .. "enemy_modifier_hp", ((GetGlobalFloat(gl .. "enemy_modifier_hp", 0) + 1 + gehms * 1)^1.005 ) * GetConVar(gl .. "global_enemy_hp_mod_num"):GetFloat() )
+                SetGlobalFloat(gl .. "enemy_modifier_damage", (GetGlobalFloat(gl .. "enemy_modifier_damage", 0) + 0.25) * 1.05 * GetConVar(gl .."global_enemy_dmg_mod_num"):GetFloat())
                 SetGlobalFloat(gl .. "enemy_modifier_resistance", math.min(0.98, GetGlobalFloat(gl .. "enemy_modifier_resistance", 0) + 0.02))
 
                 timer_count = math.min(timer_count + 1, 9999)  
@@ -1451,7 +1453,7 @@ hook.Add("Think", gl .. "think_server", function()
 
     --* ADDED b to turn this off
     if not GetGlobalBool(gl .. "stop_enemy_spawns") and GetConVar(gl .. "enable_timer"):GetBool() and delay_enemies < CurTime() and not GetGlobalBool(gl .. "is_breaktime") then 
-        delay_enemies = CurTime() + math.max(0.75, 2.5 * (90 - timer_count) / 90)
+        delay_enemies = CurTime() + math.max(0.5, 2 * (90 -   timer_count) / 90)
         -- print("ENEMY DELAY")
 
         if #spawned_enemies > 0 then 
@@ -1892,6 +1894,11 @@ hook.Add("OnEntityCreated", gl .. "entity_creation", function(ent)
     if not IsValid(ent) then return end
     if GetConVar(gl .. "enable"):GetInt() == 0 then return end
 
+    if string.find(ent:GetClass(), "acwatt") then 
+        ent:SetNWBool(gl .. "settled_2", true)
+        ent:SetNWString(gl .. "item_name", "[ACWATT] " .. ent.PrintName)
+    end
+
     if ent:IsNPC() or ent:IsNextBot() then
         timer.Simple(0, function()
             if not IsValid(ent) then return end
@@ -1904,7 +1911,7 @@ hook.Add("OnEntityCreated", gl .. "entity_creation", function(ent)
                 local max_modifiers = math.max(1, math.Round(GetGlobalBool(gl .. "minutes", 0) / 3))
                 -- local max_modifiers = 10
 
-                if not ent:GetNWBool(gl .. "is_spawned_enemy") then 
+                if ent:GetNWBool(gl .. "is_spawned_enemy") then 
                     for k, mod in RandomPairs(tbl_gl_enemy_modifiers) do   
                         -- print(k)
                         if math.random() < 0.08 and ent.gl_modifier_num < max_modifiers then 
@@ -1967,6 +1974,7 @@ end)
 hook.Add("OnNPCKilled", gl .. "enemy_killed", function(npc, att, infl) 
     if GetConVar(gl .. "enable"):GetInt() == 0 then return end
     if not att:IsPlayer() then return end
+    local ent = npc
     local ply = att
     local ply_wep = ply:GetActiveWeapon()
     local npc_maxhp = npc:GetMaxHealth() 
@@ -1978,6 +1986,25 @@ hook.Add("OnNPCKilled", gl .. "enemy_killed", function(npc, att, infl)
  
     if not npc.gl_modifier_num then 
         npc.gl_modifier_num = 0
+    end
+
+    --* create arccw att tbl list
+    if not arcw_atts_init then 
+        arcw_atts_init = true 
+
+        for k, ent_tbl in pairs(scripted_ents.GetList()) do 
+            if string.find(ent_tbl.t.ClassName, "acwatt") then 
+                table.insert(tbl_gl_arccw_atts, ent_tbl.t.ClassName)
+            end
+        end
+    end
+
+    --* drop random atts 
+    if math.random() <= 0.12 then 
+        -- PrintTable(tbl_gl_arccw_atts)
+        local att = ents.Create(table.Random(tbl_gl_arccw_atts)) 
+        att:SetPos(npc:GetPos() + Vector(0, 0, 20))
+        att:Spawn()
     end
 
     -- print("CRYSTAL DROP CHANCE: " .. wep_crystal_drop_chance)
@@ -2107,7 +2134,7 @@ hook.Add("OnNPCKilled", gl .. "enemy_killed", function(npc, att, infl)
         --     ammo_box:Spawn()
         --     SafeRemoveEntityDelayed(ammo_box, 60)
         -- end
-        ply:GiveAmmo(ply_wep:GetMaxClip1() * 0.5, ply_wep:GetPrimaryAmmoType(), true)
+        ply:GiveAmmo(ply_wep:GetMaxClip1() * 0.2, ply_wep:GetPrimaryAmmoType(), true)
     end
 
     if ply:GetNWBool(gl .. ply_wep:GetClass() .. "lightning") then 
@@ -2189,13 +2216,15 @@ hook.Add("EntityFireBullets", gl .. "fire_bullets", function(ent, data)
         ply = ent:GetOwner()
     end
   
-    ply.GL_wep = ply:GetActiveWeapon()
+    -- ply.GL_wep = ply:GetActiveWeapon()
+    local wep = ply:GetActiveWeapon()
 
-    if not ply.GL_wep.PrintName then return end
+    print("WEP IS: " .. wep:GetClass())
+    if not wep.PrintName then return end
 
-    ply.GL_wep_clip1 = ply.GL_wep:Clip1()
-    ply.GL_wep_max_clip1 = ply.GL_wep:GetMaxClip1()
-    ply.GL_ammo_type = ply.GL_wep:GetPrimaryAmmoType()
+    ply.GL_wep_clip1 = wep:Clip1()
+    ply.GL_wep_max_clip1 = wep:GetMaxClip1()
+    ply.GL_ammo_type = wep:GetPrimaryAmmoType()
     ply.held_advanced_depot = ply:GetNWBool(gl .. rh .. "advanced_depot", false)
     ply.held_genesis = ply:GetNWBool(gl .. rh .. "genesis", false)
     ply.held_deft_hands = ply:GetNWBool(gl .. rh .. "deft_hands", false)
@@ -2204,17 +2233,24 @@ hook.Add("EntityFireBullets", gl .. "fire_bullets", function(ent, data)
     if ply.bloody_ammo_num_shots == nil then
         ply.bloody_ammo_num_shots = 0
     end
+    
+    wep.garlic_like_bloody_ammo_on = false
 
-    --
-    ply.GL_wep.garlic_like_bloody_ammo_on = false
+    if wep:GetClass() == "arccw_g18_garlic_like" then 
+        print("IS GL PISTOL!")
+        print("AMMO COUNT: " .. wep:Clip1())
+        -- wep:SetClip1(1)
+
+        ply:SetAmmo(9999, gl .. "pistol_ammo")
+    end
 
     -- DEBUG  
-    if string.find(ply.GL_wep.PrintName, "arccw") then
+    if string.find(wep.PrintName, "arccw") then
         ply.genesis_chance = math.Rand(0, 1)
 
         if ply.held_genesis and not ply.held_advanced_depot and ply.genesis_chance <= ply:GetNWFloat(gl .. rh .. "genesis_mul") and ply.GL_wep_clip1 < ply.GL_wep_max_clip1 then
             -- print("GENESIS PROC")
-            ply.GL_wep:SetClip1(math.min(ply.GL_wep:GetMaxClip1(), ply.GL_wep_clip1 + ply.GL_wep_max_clip1 * ply:GetNWFloat(gl .. rh .. "genesis_mul_2")))
+            wep:SetClip1(math.min(wep:GetMaxClip1(), ply.GL_wep_clip1 + ply.GL_wep_max_clip1 * ply:GetNWFloat(gl .. rh .. "genesis_mul_2")))
         elseif ply.held_genesis and ply.held_advanced_depot and ply.genesis_chance <= ply:GetNWFloat(gl .. rh .. "genesis_mul") then
             -- print("GENESIS PROC WITH DEPOT")
             if ply.GL_wep_clip1 > 0 then
@@ -2225,8 +2261,8 @@ hook.Add("EntityFireBullets", gl .. "fire_bullets", function(ent, data)
         end
     end
 
-    function ply.GL_wep:TakePrimaryAmmo(num)
-        ply.GL_wep.GL_owner = self:GetOwner()
+    function wep:TakePrimaryAmmo(num)
+        wep.GL_owner = self:GetOwner()
         ply.GL_ammo_type = self:GetPrimaryAmmoType()
         -- print("TAKEPRIMARY AMMO")
         -- print("NUM " .. num)
@@ -2251,7 +2287,7 @@ hook.Add("EntityFireBullets", gl .. "fire_bullets", function(ent, data)
         if ply.held_bloody_ammo and self.Weapon:Clip1() == num then
             ply.bloody_ammo_num_shots = ply.bloody_ammo_num_shots + 1
             -- print("BLOODY AMMO")
-            ply.GL_wep.garlic_like_bloody_ammo_on = true
+            wep.garlic_like_bloody_ammo_on = true
             self.Weapon:SetClip1(self.Weapon:Clip1() + num)
 
             if ply.bloody_ammo_num_shots % 6 == 0 then
@@ -2260,55 +2296,72 @@ hook.Add("EntityFireBullets", gl .. "fire_bullets", function(ent, data)
             end
 
             if not ply.held_advanced_depot then
-                ply.GL_wep.GL_owner:RemoveAmmo(num - num, self.Weapon:GetPrimaryAmmoType())
+                wep.GL_owner:RemoveAmmo(num - num, self.Weapon:GetPrimaryAmmoType())
             end
         end
 
         if ply.held_advanced_depot then
-            -- print("ADVANCED DEPOT")
+            print("ADVANCED DEPOT")
 
-            if self.Weapon:Clip1() <= 0 and ply.GL_wep.GL_owner:GetAmmoCount(ply.GL_ammo_type) ~= num then
-                ply.GL_wep.GL_owner:RemoveAmmo(num, ply.GL_ammo_type)
+            if self.Weapon:Clip1() <= 0 and wep.GL_owner:GetAmmoCount(ply.GL_ammo_type) ~= num then
+                wep.GL_owner:RemoveAmmo(num, ply.GL_ammo_type)
             elseif self.Weapon:Clip1() > 0 then
-                if self.Weapon:Clip1() ~= num then
-                    self:SetClip1(self:Clip1())
-                    ply.GL_wep.GL_owner:RemoveAmmo(num, ply.GL_ammo_type)
+                if (self.Weapon:Clip1() ~= num) or (self.Weapon:GetMaxClip1() == 1) then
+                    -- print("self.Weapon:Ammo1() " .. self.Weapon:Ammo1())
+                    print("DEPOT SHOT!")
+                    print("num " .. num)
+                    print("self:Clip1() " .. self:Clip1())
 
-                    if ply.GL_wep.GL_owner:GetAmmoCount(ply.GL_ammo_type) < 1 then
+                    -- if self.Weapon:Ammo1() > 0 then 
+                    --     self:SetClip1(self:Clip1())
+                    -- end
+
+                    if self.Weapon:GetMaxClip1() == 1 and self:Clip1() > 0 and self.Weapon:Ammo1() < 1 then
+                        print("DEPOT OUT OF AMMO1!!!")
+                        self:SetClip1(0)
+                    elseif self.Weapon:Ammo1() < 1 and self:Clip1() > num then 
+                        print("DEPOT TAKE FROM CLIP1!")
                         self:SetClip1(self:Clip1() - num)
+                    end                
+
+                    if self:GetMaxClip1() > 1 and self:Ammo1() < 1 and self:Clip1() == num then 
+                        self:SetClip1(0)
                     end
-                elseif self.Weapon:Clip1() == num and ply.GL_wep.GL_owner:GetAmmoCount(ply.GL_ammo_type) < 1 then
+
+                    wep.GL_owner:RemoveAmmo(num, ply.GL_ammo_type)
+                elseif self.Weapon:Clip1() == num and wep.GL_owner:GetAmmoCount(ply.GL_ammo_type) < 1 then
+                    print("NO DEPOT SHOT!")
                     self:SetClip1(self:Clip1() - num)
                 end
             end
         end
     end
 
-    if ply.GL_wep.Base == "mg_base" then
+    if wep.Base == "mg_base" then
         num = 1
 
         if ply:GetNWBool(gl .. rh .. "deft_hands_activated") == false then
             if (not ply.held_advanced_depot and ply.held_genesis) or (ply.held_advanced_depot and ply.held_genesis) then
-                if ply.GL_wep.GL_num_shot == nil then
-                    ply.GL_wep.GL_num_shot = 0
+                if wep.GL_num_shot == nil then
+                    wep.GL_num_shot = 0
                 end
 
-                ply.GL_wep.GL_num_shot = ply.GL_wep.GL_num_shot + 1
+                wep.GL_num_shot = wep.GL_num_shot + 1
 
-                if ply.GL_wep:Clip1() < ply.GL_wep_max_clip1 and ply.GL_wep.GL_num_shot % math.Round(1 / ply:GetNWFloat(gl .. rh .. "genesis_mul")) == 0 and math.random() >= 0.5 then
-                    ply.GL_wep:SetClip1(math.min(ply.GL_wep_max_clip1, ply.GL_wep_clip1 + ply.GL_wep_max_clip1 * ply:GetNWFloat(gl .. rh .. "genesis_mul_2")))
-                    ply.GL_wep.GL_num_shot = 0
-                elseif ply.GL_wep:Clip1() >= ply.GL_wep:GetMaxClip1() and ply.GL_wep.GL_num_shot % math.Round(1 / ply:GetNWFloat(gl .. rh .. "genesis_mul")) == 0 and math.random() >= 0.5 then
+                if wep:Clip1() < ply.GL_wep_max_clip1 and wep.GL_num_shot % math.Round(1 / ply:GetNWFloat(gl .. rh .. "genesis_mul")) == 0 and math.random() >= 0.5 then
+                    wep:SetClip1(math.min(ply.GL_wep_max_clip1, ply.GL_wep_clip1 + ply.GL_wep_max_clip1 * ply:GetNWFloat(gl .. rh .. "genesis_mul_2")))
+                    wep.GL_num_shot = 0
+                elseif wep:Clip1() >= wep:GetMaxClip1() and wep.GL_num_shot % math.Round(1 / ply:GetNWFloat(gl .. rh .. "genesis_mul")) == 0 and math.random() >= 0.5 then
                     ply:GiveAmmo(ply.GL_wep_max_clip1 * ply:GetNWFloat(gl .. rh .. "genesis_mul_2"), ply.GL_ammo_type, true)
-                    ply.GL_wep.GL_num_shot = 0
+                    wep.GL_num_shot = 0
                 end
             end
 
-            if ply.held_bloody_ammo and ply.GL_wep:Clip1() == num then
+            if ply.held_bloody_ammo and wep:Clip1() == num then
                 ply.bloody_ammo_num_shots = ply.bloody_ammo_num_shots + 1
                 -- print("BLOODY AMMO")
-                ply.GL_wep.garlic_like_bloody_ammo_on = true
-                ply.GL_wep:SetClip1(ply.GL_wep:Clip1() + num)
+                wep.garlic_like_bloody_ammo_on = true
+                wep:SetClip1(wep:Clip1() + num)
 
                 if ply.bloody_ammo_num_shots % 6 == 0 then
                     ply:SetHealth(math.max(1, ply:Health() - ply:Health() * ply:GetNWFloat(gl .. rh .. "bloody_ammo_mul")))
@@ -2316,22 +2369,22 @@ hook.Add("EntityFireBullets", gl .. "fire_bullets", function(ent, data)
                 end
 
                 if not ply.held_advanced_depot then
-                    ply:RemoveAmmo(num - num, ply.GL_wep:GetPrimaryAmmoType())
+                    ply:RemoveAmmo(num - num, wep:GetPrimaryAmmoType())
                 end
             end
 
             if ply.held_advanced_depot and ply:GetAmmoCount(ply.GL_ammo_type) > 0 then
-                ply.GL_wep.garlic_like_num = 1
+                wep.garlic_like_num = 1
 
-                if ply.GL_wep:Clip1() <= 0 and ply:GetAmmoCount(ply.GL_ammo_type) ~= ply.GL_wep.garlic_like_num then
-                    ply:RemoveAmmo(ply.GL_wep.garlic_like_num, ply.GL_ammo_type)
-                elseif ply.GL_wep:Clip1() > 0 and ply.GL_wep:Clip1() ~= ply.GL_wep.garlic_like_num then
-                    ply:RemoveAmmo(ply.GL_wep.garlic_like_num, ply.GL_ammo_type)
-                    ply.GL_wep:SetClip1(math.min(ply.GL_wep_max_clip1, ply.GL_wep:Clip1() + ply.GL_wep.garlic_like_num))
+                if wep:Clip1() <= 0 and ply:GetAmmoCount(ply.GL_ammo_type) ~= wep.garlic_like_num then
+                    ply:RemoveAmmo(wep.garlic_like_num, ply.GL_ammo_type)
+                elseif wep:Clip1() > 0 and wep:Clip1() ~= wep.garlic_like_num then
+                    ply:RemoveAmmo(wep.garlic_like_num, ply.GL_ammo_type)
+                    wep:SetClip1(math.min(ply.GL_wep_max_clip1, wep:Clip1() + wep.garlic_like_num))
                 end
             end
         elseif ply:GetNWBool(gl .. rh .. "deft_hands_activated") then
-            ply.GL_wep:SetClip1(math.min(ply.GL_wep:Clip1() + 1, ply.GL_wep_max_clip1))
+            wep:SetClip1(math.min(wep:Clip1() + 1, ply.GL_wep_max_clip1))
         end
     end
 end)
@@ -2351,6 +2404,14 @@ hook.Add("EntityFireBullets", gl .. "npc_fire_bullets", function(ent, bullet)
         ParticleEffect("explo_tiny_mac_edited", ent.bPath.HitPos, Angle(0, 0, 0))
     end
 end) 
+
+concommand.Add(gl .. "debug_list_scripted_ents", function(ply, cmd, args, argStr)
+    for k, ent_tbl in pairs(scripted_ents.GetList()) do     
+        if string.find(ent_tbl.t.ClassName, "acwatt") then 
+            print(ent_tbl.t.ClassName)
+        end
+    end
+end)
 
 concommand.Add(gl .. "debug_init_pdata_test", function(ply, cmd, args, argStr)
     local total_deaths = ply:GetPData(gl .. "total_deaths")
@@ -2662,6 +2723,8 @@ concommand.Add(gl .. "start", function(ply, cmd, args, argStr)
         garlic_like_upgrade_str(ply, nil, tonumber(ply:GetPData(gl .. "bonus_starting_str_base", 0)))
         garlic_like_upgrade_agi(ply, nil, tonumber(ply:GetPData(gl .. "bonus_starting_agi_base", 0)))
         garlic_like_upgrade_int(ply, nil, tonumber(ply:GetPData(gl .. "bonus_starting_int_base", 0)))
+
+        ply:Give("arccw_g18_garlic_like")
 
         -- PrintTable(tbl_used_enemy_preset)
     else 

@@ -18,6 +18,10 @@ function recursiveInclusion( scanDirectory, isGamemode )
 		for _, directory in pairs( queue ) do
 			-- print( "Scanning directory: ", directory )
 			local files, directories = file.Find( directory .. "/*", "LUA" )
+
+			PrintTable(directories)
+			PrintTable(files)
+
 			for _, fileName in pairs( files ) do
 				if fileName != "shared.lua" and fileName != "init.lua" and fileName != "cl_init.lua" then
 					-- print( "Found: ", fileName )
