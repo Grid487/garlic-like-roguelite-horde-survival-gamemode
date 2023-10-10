@@ -54,4 +54,6 @@ Highly recommend to have these console commands used:
 - arccw_mult_hipfire 0.3
 - arccw_mult_shootwhilesprinting 1
 
+Check out notes.txt to get more info on what i'm planning to add or other brainstormings
+
 This is my first time creating a gamemode so please bear with the file and code structure...any pointers to improve my work would be appreciated.
