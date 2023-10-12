@@ -3575,6 +3575,9 @@ timer.Simple(2, function()
         local ply = LocalPlayer()
         local temp_skills = net.ReadTable()
         skills = temp_skills
+
+        if not IsValid(ply) or not IsValid(ply:GetActiveWeapon()) then return end
+
         garlic_like_update_cooldowns_weapon(ply, ply:GetActiveWeapon():GetClass())
         -- PrintTable(skills)
     end)
@@ -3733,8 +3736,8 @@ timer.Simple(2, function()
         end
 
         -- LEVEL UP
-        print("xp_total: " .. xp_total)
-        print("xp_to_next_level: " .. xp_to_next_level)
+        -- print("xp_total: " .. xp_total)
+        -- print("xp_to_next_level: " .. xp_to_next_level)
 
         if xp_total >= xp_to_next_level then
             local i = 1
@@ -4099,7 +4102,7 @@ timer.Simple(2, function()
         ply = LocalPlayer()
 
         if ply:KeyDown(IN_DUCK) and ply:KeyDown(IN_ATTACK) and ply:KeyDown(IN_ATTACK2) then
-            print("EXECUTING ULT")
+            -- print("EXECUTING ULT")
             if tbl_ult.ult_cooldown > 0 and (tbl_ult.ult_clicked == nil or not tbl_ult.ult_clicked) then
                 tbl_ult.ult_clicked = true
                 -- print("ULTIMATE STILL ON COOLDOWN!")

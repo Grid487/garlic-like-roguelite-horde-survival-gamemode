@@ -284,11 +284,14 @@ do
         ply = self:GetOwner()
 
         timer.Simple(0.25, function()
+            if not IsValid(self) then return end
             self:SetMoveParent(ply)
             self:SetAngles(ply:GetAngles())
         end)
 
         timer.Simple(0.3, function()
+            if not IsValid(self) then return end
+            
             if SERVER then
                 local model_rocket_launcher = ents.Create("base_anim")
                 mrl = model_rocket_launcher
@@ -1780,6 +1783,7 @@ do
         ["SMG1_Grenade"] = 2,
         ["Grenade"] = 2,
         ["357Round"] =  10,
+        ["Buckshot"] =  10,
     }
 
     local tbl_ammo_names = {
@@ -1793,6 +1797,7 @@ do
         "SMG1_Grenade",
         "Grenade",
         "357Round",
+        "Buckshot",
     } 
 
     local ENT = {}
@@ -1810,7 +1815,7 @@ do
             -- self:SetMoveType(MOVETYPE_FLY)
             self:SetSolid(SOLID_VPHYSICS)
             self:SetUseType(SIMPLE_USE)
-            self:SetMaxHealth(10 * math.random(50, 100) / 100 * (1 + GetGlobalFloat(gl .. "enemy_modifier_hp", 0))) 
+            self:SetMaxHealth(5 * math.random(50, 100) / 100 * (1 + GetGlobalFloat(gl .. "enemy_modifier_hp", 0))) 
             self:SetHealth(self:GetMaxHealth()) 
             -- print("CLUSTER SPAWNED")     
         
@@ -1833,8 +1838,13 @@ do
                     garlic_like_create_material_drop(ply, self, "food", "common", 1)
 
                     for i = 3, 4 do 
-                        local ammo_name = table.Random(tbl_ammo_names)
-                        ply:GiveAmmo(tbl_ammo_refill_amount[ammo_name], ammo_name, false)
+                        for ammo_name, value in pairs(tbl_ammo_refill_amount) do 
+                            ply:GiveAmmo(math.floor(value * math.Rand(0.4, 0.6)), ammo_name, false)
+                        end
+
+                        -- local ammo_name = table.Random(tbl_ammo_names)
+                        -- ply:GiveAmmo(tbl_ammo_refill_amount[ammo_name], ammo_name, false)
+
                         -- local class = table.Random(tbl_ammo)
                         -- local ammo = ents.Create(class)
                         -- ammo:SetCollisionGroup(COLLISION_GROUP_DEBRIS)

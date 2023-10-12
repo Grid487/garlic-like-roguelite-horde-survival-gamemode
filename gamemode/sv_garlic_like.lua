@@ -431,34 +431,45 @@ function garlic_like_get_nearby_point(ply)
 
     local filtered_pos_min = {}
     local filtered_pos_max = {}
-    local final_points = {}
+    local final_areas = {}
     -- PrintTable(nav_areas)
 
-    filtered_pos_min = navmesh.Find(ply_pos, 1000, 300, 200)
-    filtered_pos_max = navmesh.Find(ply_pos, 3000, 300, 200) 
+    filtered_pos_min = navmesh.Find(ply_pos, 1000, 200, 200)
+    filtered_pos_max = navmesh.Find(ply_pos, 4000, 200, 200) 
 
     -- PrintTable(filtered_pos_min)
     -- PrintTable(filtered_pos_max)
     
     for k, area in pairs(filtered_pos_max) do 
         if not table.HasValue(filtered_pos_min, area) then 
-            table.insert(final_points, #final_points, area)
+            table.insert(final_areas, #final_areas, area)
         end
     end
 
     -- print("FINAL POINTS: ")
-    -- PrintTable(final_points)
+    -- PrintTable(final_areas)
     
-    local pre_point = final_points[math.random(1, #final_points)]
+    local chosen_area = final_areas[math.random(1, #final_areas)]
 
     local loop_num = 0 
 
-    if not pre_point then print("PRE POINT NOT FOUND!") return end
+    if not chosen_area then print("NAVMESH AREA FOR SPAWNING NOT FOUND!") return end
 
-    print("SUCCESFULLY FOUND A SPAWNING POINT FOR THE ENEMY!")
+    -- print("SUCCESFULLY FOUND A SPAWNING POINT FOR THE ENEMY!")
 
-    local point = pre_point:GetRandomPoint() 
-    --
+    local point = chosen_area:GetRandomPoint() 
+
+    local loop_num = 0
+
+    while ply:GetPos():Distance(point) < 1000 do
+        loop_num = loop_num + 1 
+        if loop_num > 100 then print("NO POINT FOUND FURTHER AWAY") return point end 
+        print("POINT TOO CLOSE, LOOPING TO FIND FURTHER")
+        point = chosen_area:GetRandomPoint()
+    end
+
+    print("FOUND POINT THAT'S 1000 UNITS AWAY")
+
     return point
 end
 
@@ -508,7 +519,7 @@ function garlic_like_spawn_enemy(ply, spawn_class_override)
     enemy:SetPos(point)
     enemy:SetNWBool(gl .. "is_spawned_enemy", true)
 
-    print("ENEMY SUCCESSFULLY SPAWNED!")
+    -- print("ENEMY SUCCESSFULLY SPAWNED!")
 
     if spawn_class_override == "enemy" then 
         table.insert(spawned_enemies, enemy) 
@@ -889,7 +900,7 @@ function garlic_like_create_material_drop(ply, target, item_type, rarity, amount
     drop:SetPos(target:GetPos() + Vector(0, 0, 10) + mod_vector)
     drop:Spawn()
     drop:SetNWInt(gl .. "item_amount", amount)
-    SafeRemoveEntityDelayed(drop, 45)
+    SafeRemoveEntityDelayed(drop, 90)
 end
 
 function garlic_like_check_enemy_spawn_chances() 
@@ -1299,8 +1310,25 @@ hook.Add("Think", gl .. "think_server", function()
                 for k, ent in ipairs(spawned_enemies) do 
                     -- print("DISTANCE FROM ENT TO A PLAYER: " .. ent:GetPos():Distance(table.Random(player.GetAll()):GetPos()))
                     if not IsValid(ent) then continue end 
-                    if ent:GetPos():Distance(table.Random(player.GetAll()):GetPos()) >= 3300 then 
-                        local point = garlic_like_get_nearby_point()
+                    if ent:GetPos():Distance(table.Random(player.GetAll()):GetPos()) >= 4100 then 
+                        local point = garlic_like_get_nearby_point(ply)
+                        local loop_num = 0 
+
+                        if not point then 
+                            print("NO RELOCATE POINT FOUND!") 
+                            continue 
+                        end
+
+                        ent:SetPos(point + Vector(0, 0, 5))
+                    end  
+                end
+
+                --* relocates entities when they're far away
+                for k, ent in ipairs(tbl_gl_valid_entities) do 
+                    -- print("DISTANCE FROM ENT TO A PLAYER: " .. ent:GetPos():Distance(table.Random(player.GetAll()):GetPos()))
+                    if not IsValid(ent) then continue end 
+                    if ent:GetPos():Distance(table.Random(player.GetAll()):GetPos()) >= 4100 then 
+                        local point = garlic_like_get_nearby_point(ply)
                         local loop_num = 0 
 
                         if not point then 
@@ -2423,6 +2451,10 @@ hook.Add("EntityFireBullets", gl .. "npc_fire_bullets", function(ent, bullet)
     end
 end) 
 
+hook.Add("OnSpawnMenuOpen", gl .. "onspawnmenu", function() 
+    if GetGlobalBool(gl .. "match_running") then return false end  
+end)
+
 concommand.Add(gl .. "debug_list_scripted_ents", function(ply, cmd, args, argStr)
     for k, ent_tbl in pairs(scripted_ents.GetList()) do     
         if string.find(ent_tbl.t.ClassName, "acwatt") then 
@@ -2742,7 +2774,12 @@ concommand.Add(gl .. "start", function(ply, cmd, args, argStr)
         garlic_like_upgrade_agi(ply, nil, tonumber(ply:GetPData(gl .. "bonus_starting_agi_base", 0)))
         garlic_like_upgrade_int(ply, nil, tonumber(ply:GetPData(gl .. "bonus_starting_int_base", 0)))
 
+        ply:StripWeapons()
         ply:Give("arccw_g18_garlic_like")
+    
+        for k, v in pairs(game.GetAmmoTypes()) do 
+            ply:SetAmmo(0, v)
+        end
 
         -- PrintTable(tbl_used_enemy_preset)
     else 
