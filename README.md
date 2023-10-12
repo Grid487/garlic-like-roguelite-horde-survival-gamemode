@@ -42,6 +42,8 @@ A Garry's Mod horde survival gamemode featuring roguelite features such as in-ma
 
 - An in-game glossary to give context and information to specific features
 
+- Customw waepon selector
+
 - Locked in-game features that are unlocked through gameplay
 
 - ArcCW support
