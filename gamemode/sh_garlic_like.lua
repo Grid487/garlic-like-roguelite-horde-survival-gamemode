@@ -17,11 +17,11 @@ if SERVER then
     CreateConVar("dota2_affect_players", 0, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 1)
     CreateConVar("dota2_cooldown_diabolic_edict", 10, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 100)
     CreateConVar("dota2_numhits_diabolic_edict", 40, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 100)
-    CreateConVar("dota2_damage_diabolic_edict", 10, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 1000)
+    CreateConVar("dota2_damage_diabolic_edict", 13, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 1000)
     CreateConVar("dota2_radius_diabolic_edict", 500, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 1000)
     CreateConVar("dota2_interval_diabolic_edict", 0.25, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 1)
     CreateConVar("dota2_cooldown_torrent", 3.5, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 100)
-    CreateConVar("dota2_damage_torrent", 15, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 1000)
+    CreateConVar("dota2_damage_torrent", 20, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 1000)
     CreateConVar("dota2_stun_torrent", 2.5, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 100)
     CreateConVar("dota2_radius_torrent", 225, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 1000)
     CreateConVar("dota2_cooldown_life_break", 5, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 100)
@@ -29,11 +29,11 @@ if SERVER then
     CreateConVar("dota2_damage_self_life_break", 0.25, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 100)
     CreateConVar("dota2_radius_life_break", 300, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 1000)
     CreateConVar("dota2_cooldown_lightning_bolt", 3, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 100)
-    CreateConVar("dota2_damage_lightning_bolt", 80, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 1000)
+    CreateConVar("dota2_damage_lightning_bolt", 105, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 1000)
     CreateConVar("dota2_stun_lightning_bolt", 0.2, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 100)
     CreateConVar("dota2_radius_lightning_bolt", 1500, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 10000)
     CreateConVar("dota2_auto_cast_lightning_bolt_sv", 0, FCVAR_ARCHIVE + FCVAR_REPLICATED, "", 0, 1)
-    CreateConVar("dota2_damage_magic_missile", 90, FCVAR_ARCHIVE, "", 1, 1000)
+    CreateConVar("dota2_damage_magic_missile", 115, FCVAR_ARCHIVE, "", 1, 1000)
 end
 
 if CLIENT then 

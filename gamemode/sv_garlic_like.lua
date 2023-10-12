@@ -273,6 +273,7 @@ function garlic_like_upgrade_int(ply, INT, statboost_num)
 end
 
 function garlic_like_reduce_auto_cast_cooldown(ply, cdr_temp, convar, name)    
+    if not cdr_temp then return end
     -- print("RAN auto_cast_cooldown reduction fubnction!!!!!")
     auto_cast_cooldown = GetConVar(convar):GetFloat() + cdr_temp -- this returns the cooldown value to it's original value so we can use it as a base value
     cdr_temp = math.Truncate(auto_cast_cooldown * (1 - ply:GetNWFloat(gl .. "bonus_cooldown_mult")) * ply:GetNWFloat(gl .. ply:GetActiveWeapon():GetClass() .. "cooldown_speed", 1), 2) -- creates the coldown reduction amount value
@@ -857,6 +858,15 @@ function garlic_like_reduce_weakening_mul(ply, diff)
     end)
 end
 
+function garlic_like_launch_entity(ent, force_mod)
+    local phys = ent:GetPhysicsObject()
+    ent:SetPos(ent:GetPos() + Vector(0, 0, 3))
+    phys:ApplyForceCenter(ent:GetAngles():Up() * 7000 * force_mod)
+    phys:ApplyForceCenter(ent:GetAngles():Right() * 2500 * math.Rand(-1, 1) * force_mod)
+    phys:ApplyForceCenter(ent:GetAngles():Forward() * 1250 * math.Rand(-1, 1) * force_mod)
+    ent:EmitSound("garlic_like/item_drop_sounds/item_launch.wav", 120, 100, 1, CHAN_AUTO)
+end
+
 function garlic_like_create_material_drop(ply, target, item_type, rarity, amount, mod_spawn_pos)  
     local drop = ents.Create(gl .. "wep_crystal")
     local mod_vector = Vector(0, 0, 0)
@@ -1111,7 +1121,7 @@ hook.Add("PlayerSwitchWeapon", gl .. "check_switch", function(ply, old_wep, new_
         -- net.WriteString(new_wep:GetClass())
         -- net.Send(ply)
         --* NEW ONE
-        print("switched wep!!!")
+        -- print("switched wep!!!")
         ply.cdr_torrent = garlic_like_reduce_auto_cast_cooldown(ply, ply.cdr_torrent, "dota2_auto_cast_torrent_delay", "torrent")
         ply.cdr_lightning_bolt = garlic_like_reduce_auto_cast_cooldown(ply, ply.cdr_lightning_bolt, "dota2_auto_cast_lightning_bolt_delay", "lightning_bolt")
         ply.cdr_diabolic_edict = garlic_like_reduce_auto_cast_cooldown(ply, ply.cdr_diabolic_edict, "dota2_auto_cast_diabolic_edict_delay", "diabolic_edict")
@@ -1122,26 +1132,36 @@ hook.Add("PlayerSwitchWeapon", gl .. "check_switch", function(ply, old_wep, new_
     end
 end)
 
+local load_queue = {}
+
 hook.Add("PlayerInitialSpawn", gl .. "player_spawn", function(ply)
-    timer.Simple(0.1, function()
-        ply:SetMaxHealth(ply:GetMaxHealth() + ply:GetNWInt(gl .. "hp_boost", 0))
-    end)
-
-    timer.Simple(0.25, function()
-        garlic_like_reset_stats(ply)
-        net.Start(gl .. "update_database_sv_to_cl")
-        net.WriteEntity(ply)
-        net.WriteString("update_shop")
-        net.Send(ply)
-
-        if ply:GetPData(gl .. "total_deaths") ~= 0 then 
-            -- print("TOTAL DEATHS NOT INIT")
-            ply:SetPData(gl .. "total_deaths", 0)
-        end
-
-        --* fill up arccw att tbl
-    end)
+    load_queue[ ply ] = true 
 end)
+
+hook.Add( "SetupMove", gl .. "setupmove", function( ply, _, cmd )
+	if load_queue[ ply ] and not cmd:IsForced() then
+		load_queue[ ply ] = nil
+
+		timer.Simple(0.1, function()
+            ply:SetMaxHealth(ply:GetMaxHealth() + ply:GetNWInt(gl .. "hp_boost", 0))
+        end)
+    
+        timer.Simple(0.25, function()
+            garlic_like_reset_stats(ply)
+            net.Start(gl .. "update_database_sv_to_cl")
+            net.WriteEntity(ply)
+            net.WriteString("update_shop")
+            net.Send(ply)
+    
+            if not ply:GetPData(gl .. "total_deaths") then 
+                -- print("TOTAL DEATHS NOT INIT")
+                ply:SetPData(gl .. "total_deaths", 0)
+            end
+    
+            --* fill up arccw att tbl
+        end)
+	end
+end )
 
 hook.Add("PlayerSpawn", gl .. "player_spawn", function(ply)
     timer.Simple(0.1, function()
@@ -1368,9 +1388,9 @@ hook.Add("Think", gl .. "think_server", function()
             if seconds % 30 == 0 then 
                 global_enemy_hp_modifier_stacks = global_enemy_hp_modifier_stacks + 1
                 local gehms = global_enemy_hp_modifier_stacks
-                SetGlobalFloat(gl .. "enemy_modifier_hp", ((GetGlobalFloat(gl .. "enemy_modifier_hp", 0) + 1 + gehms * 1)^1.005 ) * GetConVar(gl .. "global_enemy_hp_mod_num"):GetFloat() )
-                SetGlobalFloat(gl .. "enemy_modifier_damage", (GetGlobalFloat(gl .. "enemy_modifier_damage", 0) + 0.25) * 1.05 * GetConVar(gl .."global_enemy_dmg_mod_num"):GetFloat())
-                SetGlobalFloat(gl .. "enemy_modifier_resistance", math.min(0.98, GetGlobalFloat(gl .. "enemy_modifier_resistance", 0) + 0.02))
+                SetGlobalFloat(gl .. "enemy_modifier_hp", ((GetGlobalFloat(gl .. "enemy_modifier_hp", 0) + 1 + gehms * 1.5)^1.005 ) * GetConVar(gl .. "global_enemy_hp_mod_num"):GetFloat() )
+                SetGlobalFloat(gl .. "enemy_modifier_damage", (GetGlobalFloat(gl .. "enemy_modifier_damage", 0) + 0.26) * 1.05 * GetConVar(gl .."global_enemy_dmg_mod_num"):GetFloat())
+                SetGlobalFloat(gl .. "enemy_modifier_resistance", math.min(0.99, GetGlobalFloat(gl .. "enemy_modifier_resistance", 0) + 0.03))
 
                 timer_count = math.min(timer_count + 1, 9999)  
                 enemy_preset_max_weight = 0
@@ -1480,7 +1500,7 @@ hook.Add("Think", gl .. "think_server", function()
             garlic_like_spawn_enemy(table.Random(player.GetAll()), gl .. "crystal_cluster") 
         end
 
-        if math.random() <= 0.1 then 
+        if math.random() <= 0.15 then 
             garlic_like_spawn_enemy(table.Random(player.GetAll()), gl .. "item_barrel") 
         end        
     end
@@ -1973,16 +1993,15 @@ end)
 
 hook.Add("OnNPCKilled", gl .. "enemy_killed", function(npc, att, infl) 
     if GetConVar(gl .. "enable"):GetInt() == 0 then return end
-    if not att:IsPlayer() then return end
+    if not att:IsPlayer() then return end 
+    -- if not GetGlobalBool(gl .. "match_running") then return end
     local ent = npc
     local ply = att
     local ply_wep = ply:GetActiveWeapon()
     local npc_maxhp = npc:GetMaxHealth() 
-    local wep_crystal_drop_chance = math.Remap(npc_maxhp, 1, 1000000, 0.3, 1) 
+    local wep_crystal_drop_chance = math.Remap(npc_maxhp, 1, 5000000, 1, 1) 
     local wep_crystal_crate_drop_chance = 0.05
     local ammo_drop_chance = 1
-
-    if not GetGlobalBool(gl .. "match_running") then return end
  
     if not npc.gl_modifier_num then 
         npc.gl_modifier_num = 0
@@ -2010,7 +2029,7 @@ hook.Add("OnNPCKilled", gl .. "enemy_killed", function(npc, att, infl)
     -- print("CRYSTAL DROP CHANCE: " .. wep_crystal_drop_chance)
     -- print(" BONUS XP: " .. ply:GetNWFloat(gl .. ply_wep:GetClass() .. "xp_gain", 1))
     --
-    local gold_gained = math.max(1, math.Round(npc_maxhp * (math.random(150, 200) / 1000) * math.random(500, 1000) / 1000 * ply:GetNWFloat(gl .. ply_wep:GetClass() .. "gold_gain", 1) * ply:GetNWFloat(gl .. "bonus_gold_gain", 1))) * (1 + npc.gl_modifier_num / 4) * (npc:GetNWInt(gl .. "modifier_golden_mul", 1))
+    local gold_gained = math.max(1, math.Round(npc_maxhp * (math.random(100, 200) / 1000) * math.random(500, 1000) / 1000 * ply:GetNWFloat(gl .. ply_wep:GetClass() .. "gold_gain", 1) * ply:GetNWFloat(gl .. "bonus_gold_gain", 1))) * (1 + npc.gl_modifier_num / 4) * (npc:GetNWInt(gl .. "modifier_golden_mul", 1))
     garlic_like_xp_gain(att, npc_maxhp * ply:GetNWFloat(gl .. ply_wep:GetClass() .. "xp_gain", 1), "KILL")
     --* INSTEAD OF INSTANTLY UPDATING, MONEY GETS UPDATED AFTER ANIMATION ON CLIENT FINISHES
     -- garlic_like_update_database(att, "money", gold_gained)
@@ -2067,9 +2086,7 @@ hook.Add("OnNPCKilled", gl .. "enemy_killed", function(npc, att, infl)
     end
 
     --* WEAPON GEM DROPS
-    if math.random() <= wep_crystal_drop_chance then  
-    -- if math.random() <= 1 then      
-    -- if math.random() <= 0 then         
+    if math.random() <= wep_crystal_drop_chance then         
         local bonus_gem_drops = (1 + ply:GetNWFloat(gl .. "bonus_gem_drops_base", 0)) 
 
         if not tbl_temp_gem_drops[npc:EntIndex()] then 
@@ -2084,7 +2101,7 @@ hook.Add("OnNPCKilled", gl .. "enemy_killed", function(npc, att, infl)
             }
         end
         
-        for i = 1, math.Remap(npc_maxhp, 0, 10000000, math.random(3, 9) * bonus_gem_drops, math.random(1000, 3000) * bonus_gem_drops) * (1 + npc.gl_modifier_num / 5) do
+        for i = 1, math.Remap(npc_maxhp, 0, 50000000, math.random(3, 9) * bonus_gem_drops, math.random(1000, 3000) * bonus_gem_drops) * (1 + npc.gl_modifier_num / 5) do
             local number = math.random(1, rarity_weights_sum)
  
             for rarity, entry in pairs(rarity_weights) do
@@ -2126,7 +2143,8 @@ hook.Add("OnNPCKilled", gl .. "enemy_killed", function(npc, att, infl)
         SafeRemoveEntityDelayed(crate, 60)
     end
 
-    if math.random() <= ammo_drop_chance and ply_wep:GetPrimaryAmmoType() and ply_wep:GetMaxClip1() then
+    --* AMMO ON KILL
+    -- if math.random() <= ammo_drop_chance and ply_wep:GetPrimaryAmmoType() and ply_wep:GetMaxClip1() then
         -- for i = 1, math.Remap(npc_maxhp, 0, 50000, math.random(1, 3), math.random(4, 8)) * (1 + npc.gl_modifier_num / 5) do
         --     local ammo_box = ents.Create(ammo_boxes[math.random(1, #ammo_boxes)])
         --     ammo_box:SetOwner(ply)
@@ -2134,8 +2152,8 @@ hook.Add("OnNPCKilled", gl .. "enemy_killed", function(npc, att, infl)
         --     ammo_box:Spawn()
         --     SafeRemoveEntityDelayed(ammo_box, 60)
         -- end
-        ply:GiveAmmo(ply_wep:GetMaxClip1() * 0.2, ply_wep:GetPrimaryAmmoType(), true)
-    end
+        -- ply:GiveAmmo(ply_wep:GetMaxClip1() * 0.2, ply_wep:GetPrimaryAmmoType(), true)
+    -- end
 
     if ply:GetNWBool(gl .. ply_wep:GetClass() .. "lightning") then 
         ply.gl_lightning_chain_entities = {}  
@@ -2219,7 +2237,7 @@ hook.Add("EntityFireBullets", gl .. "fire_bullets", function(ent, data)
     -- ply.GL_wep = ply:GetActiveWeapon()
     local wep = ply:GetActiveWeapon()
 
-    print("WEP IS: " .. wep:GetClass())
+    -- print("WEP IS: " .. wep:GetClass())
     if not wep.PrintName then return end
 
     ply.GL_wep_clip1 = wep:Clip1()
@@ -2237,8 +2255,8 @@ hook.Add("EntityFireBullets", gl .. "fire_bullets", function(ent, data)
     wep.garlic_like_bloody_ammo_on = false
 
     if wep:GetClass() == "arccw_g18_garlic_like" then 
-        print("IS GL PISTOL!")
-        print("AMMO COUNT: " .. wep:Clip1())
+        -- print("IS GL PISTOL!")
+        -- print("AMMO COUNT: " .. wep:Clip1())
         -- wep:SetClip1(1)
 
         ply:SetAmmo(9999, gl .. "pistol_ammo")

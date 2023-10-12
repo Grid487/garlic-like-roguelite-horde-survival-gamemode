@@ -162,7 +162,7 @@ timer.Simple(2, function()
         [4] = ""
     }
 
-    local rarity_colors = {
+    tbl_gl_rarity_colors = {
         ["poor"] = Color(189, 189, 189),
         ["common"] = Color(255, 255, 255),
         ["uncommon"] = Color(111, 221, 255),
@@ -230,7 +230,7 @@ timer.Simple(2, function()
     local cleared_rarities = table.ClearKeys(rarities)
     -- PrintTable(cleared_rarities)
     --* RARITY CHANCES TESTING END
-    local stored_bonused_weapons = {}
+    tbl_gl_stored_bonused_weapons = {}
     -- 
     local skills = {}
 
@@ -314,7 +314,7 @@ timer.Simple(2, function()
 
     local tbl_crystal_clusters = {}
 
-    for k, v in pairs(rarity_colors) do 
+    for k, v in pairs(tbl_gl_rarity_colors) do 
         tbl_crystal_clusters[k] = {}
     end
     
@@ -1126,7 +1126,7 @@ timer.Simple(2, function()
 
     function garlic_like_get_weapon(wep_choice, tbl_valid_weapons, get_type, rarity)
         wep_choice.wep_rarity = rarity
-        wep_choice.wep_rarity_color = rarity_colors[wep_choice.wep_rarity]
+        wep_choice.wep_rarity_color = tbl_gl_rarity_colors[wep_choice.wep_rarity]
         wep_choice.wep_element = tbl_gl_elements[math.random(1, #tbl_gl_elements)]
         wep_choice.wep_bonuses_amount = garlic_like_determine_weapon_bonuses_amount(wep_choice.wep_rarity)
         wep_choice.wep_bonuses_modifier = garlic_like_determine_weapon_bonuses_modifiers(wep_choice.wep_rarity)
@@ -2527,7 +2527,7 @@ timer.Simple(2, function()
             table.insert(tbl_wep_choice, wep_choice)
         end
 
-        -- PrintTable(stored_bonused_weapons)
+        -- PrintTable( tbl_gl_stored_bonused_weapons)
         --
         local wep_already_held = vgui.Create("DButton", black_bg, "wep_choice_" .. 4)
         wep_already_held:SetSize(bs_w * 0.25, bs_t * 0.8)
@@ -2633,7 +2633,7 @@ timer.Simple(2, function()
                     if self:IsHovered() then  
                         --! FIND A WAY TO HIDE wep_already_held WHEN NO WEAPON IS BEING HOVERED
                         --* Shows a preview of the already held weapon of the same class
-                        if stored_bonused_weapons[self.wep.ClassName] then 
+                        if  tbl_gl_stored_bonused_weapons[self.wep.ClassName] then 
                             --* If the shown owned weapon isn't the same as the one being hovered, reset
                             if wep_already_held.wep_name ~= self.wep_name then 
                                 wep_already_held.initialized = false
@@ -2641,7 +2641,7 @@ timer.Simple(2, function()
                                 wep_already_held_text:Hide()
                             end 
                                 
-                            self.sbw = stored_bonused_weapons[self.wep.ClassName]
+                            self.sbw =  tbl_gl_stored_bonused_weapons[self.wep.ClassName]
                             wep_already_held:Show()
                             wep_already_held_text:Show()
 
@@ -2650,7 +2650,7 @@ timer.Simple(2, function()
                                 wep_already_held.initialized = true 
                                 -- 
                                 wep_already_held.wep_rarity =  self.sbw.rarity
-                                wep_already_held.wep_rarity_color =  rarity_colors[self.sbw.rarity]  
+                                wep_already_held.wep_rarity_color =  tbl_gl_rarity_colors[self.sbw.rarity]  
                                 wep_already_held.wep_element =  self.sbw.element  
                                 wep_already_held.wep_bonuses_amount =  self.sbw.bonus_amount  
                                 wep_already_held.wep_bonuses_modifier =  garlic_like_determine_weapon_bonuses_modifiers(self.sbw.rarity) 
@@ -2683,7 +2683,7 @@ timer.Simple(2, function()
                     surface.PlaySound("items/gift_pickup.wav")
 
                     if wep_choice.wep_bonuses_amount > 0 then
-                        stored_bonused_weapons[wep_choice.wep.ClassName] = {
+                        tbl_gl_stored_bonused_weapons[wep_choice.wep.ClassName] = {
                             bonuses = {},
                             bonus_amount = 0,
                             name = "",
@@ -2691,20 +2691,20 @@ timer.Simple(2, function()
                             level = 1
                         }
 
-                        stored_bonused_weapons[wep_choice.wep.ClassName].bonuses = wep_choice.wep_bonuses
-                        stored_bonused_weapons[wep_choice.wep.ClassName].name = wep_choice.wep.PrintName
-                        stored_bonused_weapons[wep_choice.wep.ClassName].rarity = wep_choice.wep_rarity
-                        stored_bonused_weapons[wep_choice.wep.ClassName].element = wep_choice.wep_element.name
-                        stored_bonused_weapons[wep_choice.wep.ClassName].bonus_amount = wep_choice.wep_bonuses_amount
-                        stored_bonused_weapons[wep_choice.wep.ClassName].level = 1
+                        tbl_gl_stored_bonused_weapons[wep_choice.wep.ClassName].bonuses = wep_choice.wep_bonuses
+                        tbl_gl_stored_bonused_weapons[wep_choice.wep.ClassName].name = wep_choice.wep.PrintName
+                        tbl_gl_stored_bonused_weapons[wep_choice.wep.ClassName].rarity = wep_choice.wep_rarity
+                        tbl_gl_stored_bonused_weapons[wep_choice.wep.ClassName].element = wep_choice.wep_element.name
+                        tbl_gl_stored_bonused_weapons[wep_choice.wep.ClassName].bonus_amount = wep_choice.wep_bonuses_amount
+                        tbl_gl_stored_bonused_weapons[wep_choice.wep.ClassName].level = 1 
                     end
 
-                    -- PrintTable(stored_bonused_weapons)
+                    -- PrintTable( tbl_gl_stored_bonused_weapons)
                     --
                     net.Start(gl .. "choose_weapon")
                     net.WriteString(wep_choice.wep.ClassName)
                     net.WriteString("PICK_WEAPON")
-                    net.WriteTable(stored_bonused_weapons)
+                    net.WriteTable( tbl_gl_stored_bonused_weapons)
                     net.WriteTable({})
                     net.SendToServer()
 
@@ -2799,7 +2799,7 @@ timer.Simple(2, function()
                 garlic_like_items_held[upgrade.name].statboost = statboost_num
 
                 for k2, v2 in SortedPairs(table.ClearKeys(garlic_like_items_held)) do
-                    item_circle_colors[k2] = rarity_colors[v2.rarity]
+                    item_circle_colors[k2] = tbl_gl_rarity_colors[v2.rarity]
                 end
 
                 garlic_like_net_start_chose_upgrade(ply, upgrade, statboost_num)
@@ -2820,7 +2820,7 @@ timer.Simple(2, function()
                 end
 
                 for k3, v3 in SortedPairs(table.ClearKeys(garlic_like_skills_held)) do
-                    skill_circle_colors[k3] = rarity_colors[v3.rarity]
+                    skill_circle_colors[k3] = tbl_gl_rarity_colors[v3.rarity]
                 end
 
                 garlic_like_net_start_chose_upgrade(ply, upgrade, statboost_num)
@@ -2837,7 +2837,7 @@ timer.Simple(2, function()
                 end
 
                 for k3, v3 in SortedPairs(table.ClearKeys(garlic_like_relics_held)) do
-                    relic_circle_colors[k3] = rarity_colors[v3.rarity]
+                    relic_circle_colors[k3] = tbl_gl_rarity_colors[v3.rarity]
                 end
 
                 garlic_like_net_start_chose_upgrade(ply, upgrade, statboost_num)
@@ -2990,7 +2990,7 @@ timer.Simple(2, function()
 
                 choice_panel.upgrade_type = choice_panel.upgrade.upgrade_type
                 --
-                choice_panel.color_rarity_border = rarity_colors[choice_panel.rarity]
+                choice_panel.color_rarity_border = tbl_gl_rarity_colors[choice_panel.rarity]
             end
 
             timer.Create(gl .. "lower_transparency", 0.5, 1, function()
@@ -3743,7 +3743,7 @@ timer.Simple(2, function()
                 level = level + 1
                 pending_level_ups = pending_level_ups + 1
                 xp_total = xp_total - xp_to_next_level
-                xp_to_next_level = math.Round(xp_to_next_level * 1.08 + 400 * (1.1 + level / 9))
+                xp_to_next_level = math.Round(xp_to_next_level * 1.09 + 600 * (1.1 + level / 8))
 
                 if i == 1 then
                 elseif i >= 2 then
@@ -3903,7 +3903,7 @@ timer.Simple(2, function()
             pos = pos, 
             dmg = dmg,
             ent = ent,
-            vel = Vector(math.random(90, -90), math.random(90, -90), math.random(50, 75)),
+            vel = Vector(math.random(90, -90), math.random(90, -90), math.random(75, 100)),
             color = Color(255, 255, 255, 255),
             lifetime_lived = 0,
             size_i = 30,
@@ -3981,6 +3981,7 @@ timer.Simple(2, function()
 
         timer.Simple(0.1, function()
             if not IsValid(ent) then return end 
+            local class = ent:GetClass()
 
             timer.Simple(0.2, function()
                 if not IsValid(ent) then return end 
@@ -3990,7 +3991,7 @@ timer.Simple(2, function()
                 end
             end)
 
-            if table.HasValue(tbl_gl_entities, ent:GetClass()) or string.find(ent:GetClass(), "acwatt") then  
+            if table.HasValue(tbl_gl_entities, ent:GetClass()) or string.find(class, "acwatt") or string.find(class, "item_") then  
                 if #garlic_like_item_drops_entities > 0 then
                     garlic_like_item_drops_entities = table.ClearKeys(garlic_like_item_drops_entities)
                 end
@@ -4041,7 +4042,7 @@ timer.Simple(2, function()
             local basepos = ent:GetPos()
             local pos = Vector(basepos.x, basepos.y, basepos.z)
             local rarity = ent:GetNWString(gl .. "item_rarity")
-            local rarity_color = rarity_colors[rarity]
+            local rarity_color = tbl_gl_rarity_colors[rarity]
             local beam_start = pos + Vector(0, 0, 10)
             local beam_end = pos + Vector(0, 0, math.Remap(garlic_like_rarity_to_num(rarity), 1, 7, 100, 175))
             --
@@ -4075,8 +4076,18 @@ timer.Simple(2, function()
                 if not rarity_color then 
                     rarity_color = color_white
                 end
+                
+                local name = ent:GetNWString(gl .. "item_name")
 
-                draw.WordBox(4, 0, 0, ent:GetNWString(gl .. "item_name"), gl .. "font_subtitle", color_black_alpha_200, rarity_color, TEXT_ALIGN_CENTER)
+                if (not name or name == "") and ent.PrintName then 
+                    name = ent.PrintName
+                end
+
+                if not ent:IsScripted() then 
+                    name = language.GetPhrase(ent:GetClass())
+                end
+
+                draw.WordBox(4, 0, 0, name, gl .. "font_subtitle", color_black_alpha_200, rarity_color, TEXT_ALIGN_CENTER)
             end
 
             cam.End3D2D()
@@ -4280,6 +4291,10 @@ timer.Simple(2, function()
         if GetConVar(gl .. "enable"):GetInt() == 0 then return end
         if ply.gl_has_menu_open then return end 
         if not run_end_screen_stop_showing then return end
+        
+        if gl_weapon_selector_showing then 
+            surface.SetAlphaMultiplier(0.3)
+        end
         -- if GetGlobalBool(gl .. "show_end_screen") then return end
 
         level = ply:GetNWInt(gl .. "level", 1)
@@ -4396,6 +4411,8 @@ timer.Simple(2, function()
             surface.DrawText(pending_text)
             surface.SetAlphaMultiplier(1)
         end
+
+        surface.SetAlphaMultiplier(1)
     end)
 
     hook.Add("HUDPaint", gl .. "enemy_empowered_show_on_hud", function()
@@ -4616,7 +4633,7 @@ timer.Simple(2, function()
                     if v.lifetime_lived < 0.3 then 
                         -- v.color.a = math.min(255, v.color.a + RFT * 1350)
                         v.size_i = math.max(1, v.size_i - RFT * 255)
-                    elseif v.lifetime_lived > 1 then 
+                    elseif v.lifetime_lived > 0.7 then 
                         v.color.a = math.max(0, v.color.a - RFT * 500)
                         v.size_i = math.min(30, v.size_i + RFT * 50)
                     end
@@ -4774,20 +4791,20 @@ timer.Simple(2, function()
             line_alpha_mul = math.Approach(line_alpha_mul, 0, 0.15)
         end
 
-        if line_alpha_mul > 0 and IsValid(ply_wep) and stored_bonused_weapons[ply_wep_class] ~= nil then
+        if line_alpha_mul > 0 and IsValid(ply_wep) and  tbl_gl_stored_bonused_weapons[ply_wep_class] ~= nil then
             if ply:Alive() then
                 weapon_name = ply_wep:GetPrintName()
             else
                 weapon_name = ""
             end
 
-            -- PrintTable(stored_bonused_weapons[ply_wep_class])
+            -- PrintTable( tbl_gl_stored_bonused_weapons[ply_wep_class])
 
-            local rarity = stored_bonused_weapons[ply_wep_class].rarity
-            local element = stored_bonused_weapons[ply_wep_class].element
+            local rarity =  tbl_gl_stored_bonused_weapons[ply_wep_class].rarity
+            local element =  tbl_gl_stored_bonused_weapons[ply_wep_class].element
             surface.SetAlphaMultiplier(line_alpha_mul)
             surface.SetDrawColor(255, 255, 255, 255)
-            surface.SetDrawColor(rarity_colors[rarity].r, rarity_colors[rarity].g, rarity_colors[rarity].b)
+            surface.SetDrawColor(tbl_gl_rarity_colors[rarity].r, tbl_gl_rarity_colors[rarity].g, tbl_gl_rarity_colors[rarity].b)
             surface.DrawLine(line_length, H_half_screen, W, H_half_screen)
             surface.DrawLine(line_length, H_half_screen + 1, W, H_half_screen + 1)
             surface.DrawLine(line_length, H_half_screen + 2, W, H_half_screen + 2)
@@ -4803,11 +4820,11 @@ timer.Simple(2, function()
             end
 
             -- surface.SetMaterial()
-            gl_cse(ply, line_length, H * 0.45, string.upper(rarity), "", "", true, false, "", false, gl .. "font_title_3", rarity_colors[rarity], false)
-            gl_cse(ply, line_length + W * 0.017, H * 0.48, "", "", weapon_name, true, false, "", false, gl .. "font_title_2", rarity_colors[rarity], false)
+            gl_cse(ply, line_length, H * 0.45, string.upper(rarity), "", "", true, false, "", false, gl .. "font_title_3", tbl_gl_rarity_colors[rarity], false)
+            gl_cse(ply, line_length + W * 0.017, H * 0.48, "", "", weapon_name, true, false, "", false, gl .. "font_title_2", tbl_gl_rarity_colors[rarity], false)
 
-            if stored_bonused_weapons[ply_wep_class].bonus_amount > 0 then
-                for k, bonus in pairs(stored_bonused_weapons[ply_wep_class].bonuses) do
+            if  tbl_gl_stored_bonused_weapons[ply_wep_class].bonus_amount > 0 then
+                for k, bonus in pairs( tbl_gl_stored_bonused_weapons[ply_wep_class].bonuses) do
                     gl_cse(ply, line_length, (H * 0.53) + ((k - 1) * H * 0.035), "", 100 * bonus.modifier .. "%", " " .. bonus.desc, true, false, "", false, gl .. "font_subtitle_2", nil, false)
                 end
             end
@@ -5158,7 +5175,7 @@ timer.Simple(2, function()
         outline.Add(ents.FindByClass(gl .. "station_weapon_upgrade"), color_blue, 0)
         outline.Add(ents.FindByClass(gl .. "item_barrel"), color_yellow, 0) 
         
-        for rarity, color in SortedPairs(rarity_colors) do  
+        for rarity, color in SortedPairs(tbl_gl_rarity_colors) do  
             if #tbl_crystal_clusters[rarity] > 0 then 
                 outline.Add(tbl_crystal_clusters[rarity], color, 0)
             end
@@ -5276,7 +5293,7 @@ timer.Simple(2, function()
         -- PrintTable(args)
         --! POLISH THE CODE!!!
 
-        local rarity_color = rarity_colors[string.lower(args[3])]
+        local rarity_color = tbl_gl_rarity_colors[string.lower(args[3])]
         local entry_data = {}
         local insertable = true
 
@@ -5469,16 +5486,16 @@ timer.Simple(2, function()
                 --     surface.DrawTexturedRect(w * 0.125, h * 0.125, w * 0.8, h * 0.8)
                 -- end
                 reroll_button.DoClick = function(self) 
-                    -- PrintTable(stored_bonused_weapons)
+                    -- PrintTable( tbl_gl_stored_bonused_weapons)
                     if MaterialsInventory["Reroll Crystal"].held_num < required_reroll_crystals then 
                         return
                     end
 
-                    if stored_bonused_weapons[button_weapon_slot.gl_chosen_weapon] then 
+                    if  tbl_gl_stored_bonused_weapons[button_weapon_slot.gl_chosen_weapon] then 
                         --*
                         self:SetTooltip(false)
                         MaterialsInventory["Reroll Crystal"].held_num = MaterialsInventory["Reroll Crystal"].held_num - required_reroll_crystals
-                        local weapon_tbl = stored_bonused_weapons[button_weapon_slot.gl_chosen_weapon]  
+                        local weapon_tbl =  tbl_gl_stored_bonused_weapons[button_weapon_slot.gl_chosen_weapon]  
                         local get_tbl_bonus = tbl_gl_bonuses_weapons[math.random(1, #tbl_gl_bonuses_weapons)]
                         local rarity_rand_modifier = math.Remap(garlic_like_rarity_to_num(weapon_tbl.rarity), 1, 7, 1, 2)  
                         local potency_rand_min = 0.25 * rarity_rand_modifier
@@ -5502,7 +5519,7 @@ timer.Simple(2, function()
                         net.Start(gl .. "choose_weapon")
                         net.WriteString(button_weapon_slot.gl_chosen_weapon)
                         net.WriteString("UPGRADE_WEAPON")
-                        net.WriteTable(stored_bonused_weapons)
+                        net.WriteTable( tbl_gl_stored_bonused_weapons)
                         net.WriteTable({})
                         net.SendToServer()
 
@@ -5555,7 +5572,7 @@ timer.Simple(2, function()
 
             --* WEAPONS SCROLL PANEL
             for k, wep in pairs(ply:GetWeapons()) do
-                if not wep:IsScripted() or stored_bonused_weapons[wep.ClassName] == nil then continue end
+                if not wep:IsScripted() or  tbl_gl_stored_bonused_weapons[wep.ClassName] == nil then continue end
                 --
                 local mat_wep_icon
                 local mat_wep_icon_texture
@@ -5585,7 +5602,7 @@ timer.Simple(2, function()
                     button_upgrade.enough_materials = nil
                     local mat_wep_icon
                     local str_1, str_2 = string.find(wep.ClassName, "arccw")
-                    weapon_tbl = stored_bonused_weapons[button_weapon_slot.gl_chosen_weapon]
+                    weapon_tbl =  tbl_gl_stored_bonused_weapons[button_weapon_slot.gl_chosen_weapon]
                     weapon_rarity = weapon_tbl.rarity 
                     weapon_rarity_num = garlic_like_rarity_to_num(weapon_rarity) 
                     required_reroll_crystals = math.Round(math.Remap((tbl_gl_rarity_to_number[weapon_rarity] + 1) / 2, 1, 4, 1, 50))
@@ -5625,24 +5642,24 @@ timer.Simple(2, function()
                 weapon_box.Paint = function(self, w, h)
                     draw.RoundedBox(8, 0, 0, w, h, Color(35, 35, 35))
                     surface.SetDrawColor(255, 255, 255)
-                    surface.DrawCircle(w * 0.5, w * 0.2, w * 0.15, rarity_colors[stored_bonused_weapons[wep.ClassName].rarity])
-                    gl_cse(ply, w * 0.5, h * 0.375, string.upper(stored_bonused_weapons[wep.ClassName].rarity), "", "", true, false, "", false, gl .. "font_subtitle", rarity_colors[stored_bonused_weapons[wep.ClassName].rarity], true)
+                    surface.DrawCircle(w * 0.5, w * 0.2, w * 0.15, tbl_gl_rarity_colors[ tbl_gl_stored_bonused_weapons[wep.ClassName].rarity])
+                    gl_cse(ply, w * 0.5, h * 0.375, string.upper( tbl_gl_stored_bonused_weapons[wep.ClassName].rarity), "", "", true, false, "", false, gl .. "font_subtitle", tbl_gl_rarity_colors[ tbl_gl_stored_bonused_weapons[wep.ClassName].rarity], true)
                     gl_cse(ply, w * 0.5, h * 0.425, "", "", wep.PrintName, true, false, "", false, gl .. "font_title_3", nil, true)
-                    draw.DrawText("LEVEL " .. stored_bonused_weapons[wep.ClassName].level, gl .. "font_subtitle", w * 0.5, h * 0.46, color_white, TEXT_ALIGN_CENTER)
+                    draw.DrawText("LEVEL " ..  tbl_gl_stored_bonused_weapons[wep.ClassName].level, gl .. "font_subtitle", w * 0.5, h * 0.46, color_white, TEXT_ALIGN_CENTER)
                     surface.SetDrawColor(255, 255, 255)
                     surface.SetMaterial(mat_wep_icon)
                     surface.DrawTexturedRect(w * 0.5 - w * 0.225, h * 0.1, w * 0.45, h * 0.2)
 
-                    for k, bonus in pairs(stored_bonused_weapons[wep.ClassName].bonuses) do
+                    for k, bonus in pairs( tbl_gl_stored_bonused_weapons[wep.ClassName].bonuses) do
                         gl_cse(ply, w * 0.5, (h * 0.5) + (k * h * 0.06), 100 * bonus.modifier, "%", bonus.desc, true, false, "", false, gl .. "font_subtitle", nil, true)
                     end
 
                     if self:IsHovered() and not self:IsDown() then
-                        draw.RoundedBox(8, 0, 0, w, h, Color(rarity_colors[stored_bonused_weapons[wep.ClassName].rarity].r, rarity_colors[stored_bonused_weapons[wep.ClassName].rarity].g, rarity_colors[stored_bonused_weapons[wep.ClassName].rarity].b, 10))
+                        draw.RoundedBox(8, 0, 0, w, h, Color(tbl_gl_rarity_colors[ tbl_gl_stored_bonused_weapons[wep.ClassName].rarity].r, tbl_gl_rarity_colors[ tbl_gl_stored_bonused_weapons[wep.ClassName].rarity].g, tbl_gl_rarity_colors[ tbl_gl_stored_bonused_weapons[wep.ClassName].rarity].b, 10))
                     end
 
                     if self:IsDown() then
-                        draw.RoundedBox(8, 0, 0, w, h, Color(rarity_colors[stored_bonused_weapons[wep.ClassName].rarity].r, rarity_colors[stored_bonused_weapons[wep.ClassName].rarity].g, rarity_colors[stored_bonused_weapons[wep.ClassName].rarity].b, 30))
+                        draw.RoundedBox(8, 0, 0, w, h, Color(tbl_gl_rarity_colors[ tbl_gl_stored_bonused_weapons[wep.ClassName].rarity].r, tbl_gl_rarity_colors[ tbl_gl_stored_bonused_weapons[wep.ClassName].rarity].g, tbl_gl_rarity_colors[ tbl_gl_stored_bonused_weapons[wep.ClassName].rarity].b, 30))
                     end
                 end
             end
@@ -5730,13 +5747,13 @@ timer.Simple(2, function()
                     net.Start(gl .. "choose_weapon")
                     net.WriteString(button_weapon_slot.gl_chosen_weapon)
                     net.WriteString("UPGRADE_WEAPON")
-                    net.WriteTable(stored_bonused_weapons)
+                    net.WriteTable( tbl_gl_stored_bonused_weapons)
                     net.WriteTable({})
                     net.SendToServer()
 
                     garlic_like_update_money(price, "BOUGHT_ITEM")
 
-                    -- PrintTable(stored_bonused_weapons[button_weapon_slot.gl_chosen_weapon])
+                    -- PrintTable( tbl_gl_stored_bonused_weapons[button_weapon_slot.gl_chosen_weapon])
                 end
             end
 
@@ -5778,8 +5795,8 @@ timer.Simple(2, function()
                     draw.DrawText("WEAPON NAME", gl .. "font_title_2", w * 0.5, 0, color_white, TEXT_ALIGN_CENTER)
                 else
                     local wep_name = button_weapon_slot.gl_chosen_weapon
-                    gl_cse(ply, w * 0.5, h * 0.15, string.upper(stored_bonused_weapons[wep_name].rarity), "", "", true, false, "", false, gl .. "font_title_3", rarity_colors[string.lower(stored_bonused_weapons[wep_name].rarity)], true)
-                    gl_cse(ply, w * 0.5, h * 0.5, string.upper(stored_bonused_weapons[wep_name].name), "", "", true, false, "", false, gl .. "font_title_2", color_white, true)
+                    gl_cse(ply, w * 0.5, h * 0.15, string.upper( tbl_gl_stored_bonused_weapons[wep_name].rarity), "", "", true, false, "", false, gl .. "font_title_3", tbl_gl_rarity_colors[string.lower( tbl_gl_stored_bonused_weapons[wep_name].rarity)], true)
+                    gl_cse(ply, w * 0.5, h * 0.5, string.upper( tbl_gl_stored_bonused_weapons[wep_name].name), "", "", true, false, "", false, gl .. "font_title_2", color_white, true)
                     draw.DrawText("LEVEL " .. weapon_tbl.level, gl .. "font_subtitle_2", w * 0.5, h * 0.6, color_white, TEXT_ALIGN_CENTER)
                 end
             end   
@@ -5793,7 +5810,7 @@ timer.Simple(2, function()
                 if button_weapon_slot.gl_chosen_weapon == "NONE" then return end 
                 --
                 gold = tonumber(ply:GetNWInt(gl .. "money", 0))
-                price = math.Round(150 * weapon_rarity_num^(1.5 + weapon_tbl.level * 0.25))
+                price = math.Round(150 * weapon_rarity_num^(1.5 + weapon_tbl.level * 0.3))
                 local color_price = color_white 
                 
                 if gold < price then
@@ -5860,7 +5877,7 @@ timer.Simple(2, function()
                 if button_weapon_slot.gl_chosen_weapon == "NONE" then
                     surface.DrawCircle(w * 0.5, w * 0.105, w * 0.085, color_white)
                 else
-                    surface.DrawCircle(w * 0.5, w * 0.105, w * 0.085, rarity_colors[stored_bonused_weapons[button_weapon_slot.gl_chosen_weapon].rarity])
+                    surface.DrawCircle(w * 0.5, w * 0.105, w * 0.085, tbl_gl_rarity_colors[ tbl_gl_stored_bonused_weapons[button_weapon_slot.gl_chosen_weapon].rarity])
                 end
             end
 
@@ -6015,8 +6032,8 @@ timer.Simple(2, function()
                     if not bf then return end 
                     
                     for k, wep in pairs(ply:GetWeapons()) do
-                        if not wep:IsScripted() or stored_bonused_weapons[wep.ClassName] == nil then continue end
-                        if stored_bonused_weapons[wep.ClassName].rarity == "god" then continue end
+                        if not wep:IsScripted() or  tbl_gl_stored_bonused_weapons[wep.ClassName] == nil then continue end
+                        if  tbl_gl_stored_bonused_weapons[wep.ClassName].rarity == "god" then continue end
                         --
                         local mat_wep_icon
                         local mat_wep_icon_texture
@@ -6048,7 +6065,7 @@ timer.Simple(2, function()
                             button_fuse.enough_materials = nil
                             local mat_wep_icon
                             local str_1, str_2 = string.find(wep.ClassName, "arccw")
-                            weapon_tbl = stored_bonused_weapons[wep.ClassName]
+                            weapon_tbl =  tbl_gl_stored_bonused_weapons[wep.ClassName]
                             weapon_rarity = weapon_tbl.rarity 
                             weapon_rarity_num = garlic_like_rarity_to_num(weapon_rarity) 
         
@@ -6082,7 +6099,7 @@ timer.Simple(2, function()
         
                                 for k2, panel in ipairs(tbl_bt_item_to_fuse) do                                                         
                                     if panel.slot_num == currently_chosen_fuse_slot then  
-                                        panel.border_color = rarity_colors[string.lower(weapon_rarity)]
+                                        panel.border_color = tbl_gl_rarity_colors[string.lower(weapon_rarity)]
         
                                         panel.tbl_item = {
                                             name = wep.PrintName,
@@ -6102,7 +6119,7 @@ timer.Simple(2, function()
                                         if num_filled == 3 then 
                                             isfusable = true
                                             fused_rarity = table.KeyFromValue(tbl_gl_rarity_to_number, tbl_gl_rarity_to_number[panel.tbl_item.rarity] + 1)
-                                            button_result.border_color = rarity_colors[fused_rarity]
+                                            button_result.border_color = tbl_gl_rarity_colors[fused_rarity]
                                             button_result.wep_icon = Material("garlic_like/question_mark_white_sizefit.png")
                                         end
                                     end
@@ -6115,28 +6132,28 @@ timer.Simple(2, function()
                         end
         
                         weapon_box.Paint = function(self, w, h)
-                            if not stored_bonused_weapons[wep.ClassName] then return end 
+                            if not  tbl_gl_stored_bonused_weapons[wep.ClassName] then return end 
                             --
                             draw.RoundedBox(8, 0, 0, w, h, Color(35, 35, 35))
                             surface.SetDrawColor(255, 255, 255)
-                            surface.DrawCircle(w * 0.5, w * 0.2, w * 0.15, rarity_colors[stored_bonused_weapons[wep.ClassName].rarity])
-                            gl_cse(ply, w * 0.5, h * 0.375, string.upper(stored_bonused_weapons[wep.ClassName].rarity), "", "", true, false, "", false, gl .. "font_subtitle", rarity_colors[stored_bonused_weapons[wep.ClassName].rarity], true)
+                            surface.DrawCircle(w * 0.5, w * 0.2, w * 0.15, tbl_gl_rarity_colors[ tbl_gl_stored_bonused_weapons[wep.ClassName].rarity])
+                            gl_cse(ply, w * 0.5, h * 0.375, string.upper( tbl_gl_stored_bonused_weapons[wep.ClassName].rarity), "", "", true, false, "", false, gl .. "font_subtitle", tbl_gl_rarity_colors[ tbl_gl_stored_bonused_weapons[wep.ClassName].rarity], true)
                             gl_cse(ply, w * 0.5, h * 0.425, "", "", wep.PrintName, true, false, "", false, gl .. "font_title_3", nil, true)
-                            draw.DrawText("LEVEL " .. stored_bonused_weapons[wep.ClassName].level, gl .. "font_subtitle", w * 0.5, h * 0.46, color_white, TEXT_ALIGN_CENTER)
+                            draw.DrawText("LEVEL " ..  tbl_gl_stored_bonused_weapons[wep.ClassName].level, gl .. "font_subtitle", w * 0.5, h * 0.46, color_white, TEXT_ALIGN_CENTER)
                             surface.SetDrawColor(255, 255, 255)
                             surface.SetMaterial(mat_wep_icon)
                             surface.DrawTexturedRect(w * 0.5 - w * 0.225, h * 0.1, w * 0.45, h * 0.2)
         
-                            for k, bonus in pairs(stored_bonused_weapons[wep.ClassName].bonuses) do
+                            for k, bonus in pairs( tbl_gl_stored_bonused_weapons[wep.ClassName].bonuses) do
                                 gl_cse(ply, w * 0.5, (h * 0.5) + (k * h * 0.06), 100 * bonus.modifier, "%", bonus.desc, true, false, "", false, gl .. "font_subtitle", nil, true)
                             end
         
                             if self:IsHovered() and not self:IsDown() then
-                                draw.RoundedBox(8, 0, 0, w, h, Color(rarity_colors[stored_bonused_weapons[wep.ClassName].rarity].r, rarity_colors[stored_bonused_weapons[wep.ClassName].rarity].g, rarity_colors[stored_bonused_weapons[wep.ClassName].rarity].b, 10))
+                                draw.RoundedBox(8, 0, 0, w, h, Color(tbl_gl_rarity_colors[ tbl_gl_stored_bonused_weapons[wep.ClassName].rarity].r, tbl_gl_rarity_colors[ tbl_gl_stored_bonused_weapons[wep.ClassName].rarity].g, tbl_gl_rarity_colors[ tbl_gl_stored_bonused_weapons[wep.ClassName].rarity].b, 10))
                             end
         
                             if self:IsDown() then
-                                draw.RoundedBox(8, 0, 0, w, h, Color(rarity_colors[stored_bonused_weapons[wep.ClassName].rarity].r, rarity_colors[stored_bonused_weapons[wep.ClassName].rarity].g, rarity_colors[stored_bonused_weapons[wep.ClassName].rarity].b, 30))
+                                draw.RoundedBox(8, 0, 0, w, h, Color(tbl_gl_rarity_colors[ tbl_gl_stored_bonused_weapons[wep.ClassName].rarity].r, tbl_gl_rarity_colors[ tbl_gl_stored_bonused_weapons[wep.ClassName].rarity].g, tbl_gl_rarity_colors[ tbl_gl_stored_bonused_weapons[wep.ClassName].rarity].b, 30))
                             end
         
                             if self.item_used then 
@@ -6161,12 +6178,12 @@ timer.Simple(2, function()
                 isfusable = false
                 currently_chosen_fuse_slot = 1
 
-                for k2, v2 in pairs(stored_bonused_weapons) do 
+                for k2, v2 in pairs( tbl_gl_stored_bonused_weapons) do 
                     for k3, panel in ipairs(tbl_bt_item_to_fuse) do 
                         if k2 == panel.tbl_item.class then 
                             -- print("FOUND IT !!!!")
-                            stored_bonused_weapons[k2] = nil 
-                            -- stored_bonused_weapons = table.ClearKeys(stored_bonused_weapons) 
+                             tbl_gl_stored_bonused_weapons[k2] = nil 
+                            --  tbl_gl_stored_bonused_weapons = table.ClearKeys( tbl_gl_stored_bonused_weapons) 
                         end
                     end
                 end
@@ -6181,7 +6198,7 @@ timer.Simple(2, function()
                 surface.PlaySound("items/gift_pickup.wav")
 
                 if button_result.wep_bonuses_amount > 0 then
-                    stored_bonused_weapons[button_result.wep.ClassName] = {
+                     tbl_gl_stored_bonused_weapons[button_result.wep.ClassName] = {
                         bonuses = {},
                         bonus_amount = 0,
                         name = "",
@@ -6189,12 +6206,12 @@ timer.Simple(2, function()
                         level = 1
                     }
 
-                    stored_bonused_weapons[button_result.wep.ClassName].bonuses = button_result.wep_bonuses
-                    stored_bonused_weapons[button_result.wep.ClassName].name = button_result.wep.PrintName
-                    stored_bonused_weapons[button_result.wep.ClassName].rarity = button_result.wep_rarity
-                    stored_bonused_weapons[button_result.wep.ClassName].element = button_result.wep_element.name
-                    stored_bonused_weapons[button_result.wep.ClassName].bonus_amount = button_result.wep_bonuses_amount
-                    stored_bonused_weapons[button_result.wep.ClassName].level = 1
+                     tbl_gl_stored_bonused_weapons[button_result.wep.ClassName].bonuses = button_result.wep_bonuses
+                     tbl_gl_stored_bonused_weapons[button_result.wep.ClassName].name = button_result.wep.PrintName
+                     tbl_gl_stored_bonused_weapons[button_result.wep.ClassName].rarity = button_result.wep_rarity
+                     tbl_gl_stored_bonused_weapons[button_result.wep.ClassName].element = button_result.wep_element.name
+                     tbl_gl_stored_bonused_weapons[button_result.wep.ClassName].bonus_amount = button_result.wep_bonuses_amount
+                     tbl_gl_stored_bonused_weapons[button_result.wep.ClassName].level = 1
                 end
 
                 fused_preview.wep = button_result.wep
@@ -6211,12 +6228,12 @@ timer.Simple(2, function()
                 end
 
                 button_result.wep_icon = fused_preview.wep_icon 
-                -- PrintTable(stored_bonused_weapons)
+                -- PrintTable( tbl_gl_stored_bonused_weapons)
                 --  
                 net.Start(gl .. "choose_weapon")
                 net.WriteString(button_result.wep.ClassName)
                 net.WriteString("PICK_WEAPON")
-                net.WriteTable(stored_bonused_weapons)
+                net.WriteTable( tbl_gl_stored_bonused_weapons)
                 net.WriteTable(tbl_of_weps_to_remove)
                 net.SendToServer()
                 --
@@ -6338,10 +6355,10 @@ timer.Simple(2, function()
                 --
                 draw.RoundedBox(8, 0, 0, w, h, Color(35, 35, 35))
                 surface.SetDrawColor(255, 255, 255)
-                surface.DrawCircle(w * 0.5, w * 0.2, w * 0.15, rarity_colors[stored_bonused_weapons[self.wep.ClassName].rarity])
-                gl_cse(ply, w * 0.5, h * 0.375, string.upper(stored_bonused_weapons[self.wep.ClassName].rarity), "", "", true, false, "", false, gl .. "font_subtitle", rarity_colors[stored_bonused_weapons[self.wep.ClassName].rarity], true)
+                surface.DrawCircle(w * 0.5, w * 0.2, w * 0.15, tbl_gl_rarity_colors[ tbl_gl_stored_bonused_weapons[self.wep.ClassName].rarity])
+                gl_cse(ply, w * 0.5, h * 0.375, string.upper( tbl_gl_stored_bonused_weapons[self.wep.ClassName].rarity), "", "", true, false, "", false, gl .. "font_subtitle", tbl_gl_rarity_colors[ tbl_gl_stored_bonused_weapons[self.wep.ClassName].rarity], true)
                 gl_cse(ply, w * 0.5, h * 0.425, "", "", self.wep.PrintName, true, false, "", false, gl .. "font_title_3", nil, true)
-                draw.DrawText("LEVEL " .. stored_bonused_weapons[self.wep.ClassName].level, gl .. "font_subtitle", w * 0.5, h * 0.46, color_white, TEXT_ALIGN_CENTER)
+                draw.DrawText("LEVEL " ..  tbl_gl_stored_bonused_weapons[self.wep.ClassName].level, gl .. "font_subtitle", w * 0.5, h * 0.46, color_white, TEXT_ALIGN_CENTER)
                 surface.SetDrawColor(255, 255, 255)
 
                 if isnumber(self.wep_icon ) then 
@@ -6352,7 +6369,7 @@ timer.Simple(2, function()
 
                 surface.DrawTexturedRect(w * 0.5 - w * 0.225, h * 0.03, w * 0.45, h * 0.15)
 
-                for k, bonus in pairs(stored_bonused_weapons[self.wep.ClassName].bonuses) do
+                for k, bonus in pairs( tbl_gl_stored_bonused_weapons[self.wep.ClassName].bonuses) do
                     gl_cse(ply, w * 0.5, (h * 0.5) + (k * h * 0.06), 100 * bonus.modifier, "%", bonus.desc, true, false, "", false, gl .. "font_subtitle", nil, true)
                 end
             end

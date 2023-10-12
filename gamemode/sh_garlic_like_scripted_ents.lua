@@ -1703,7 +1703,7 @@ do
             self:SetMoveType(MOVETYPE_FLY)
             self:SetSolid(SOLID_VPHYSICS)
             self:SetUseType(SIMPLE_USE)
-            self:SetMaxHealth(400 * math.random(75, 125) / 100 * (1 + GetGlobalFloat(gl .. "enemy_modifier_hp", 0))) 
+            self:SetMaxHealth(300 * math.random(75, 125) / 100 * (1 + GetGlobalFloat(gl .. "enemy_modifier_hp", 0))) 
             self:SetHealth(self:GetMaxHealth())
             self.RarityNum = math.random(1, rarity_weights_max)
             -- print("CLUSTER SPAWNED")
@@ -1758,6 +1758,43 @@ end
 
 --* loot barrel 
 do 
+    local tbl_ammo = {
+        "item_ammo_357",
+        "item_ammo_ar2",
+        "item_ammo_pistol",
+        "item_ammo_smg1",
+        "item_ammo_357",
+        "item_box_buckshot",
+        "item_rpg_round",
+        "item_ammo_crossbow", 
+    } 
+
+    local tbl_ammo_refill_amount = {
+        ["AR2"] = 30,
+        ["AR2AltFire"] = 2,
+        ["Pistol"] = 30,
+        ["SMG1"] = 30,
+        ["357"] = 10,
+        ["XBowBolt"] = 10,
+        ["RPG_Round"] = 2,
+        ["SMG1_Grenade"] = 2,
+        ["Grenade"] = 2,
+        ["357Round"] =  10,
+    }
+
+    local tbl_ammo_names = {
+        "AR2",
+        "AR2AltFire",
+        "Pistol",
+        "SMG1",
+        "357",
+        "XBowBolt",
+        "RPG_Round",
+        "SMG1_Grenade",
+        "Grenade",
+        "357Round",
+    } 
+
     local ENT = {}
     ENT.Type = "anim"
     ENT.Base = "base_anim"
@@ -1773,7 +1810,7 @@ do
             -- self:SetMoveType(MOVETYPE_FLY)
             self:SetSolid(SOLID_VPHYSICS)
             self:SetUseType(SIMPLE_USE)
-            self:SetMaxHealth(150 * math.random(50, 100) / 100 * (1 + GetGlobalFloat(gl .. "enemy_modifier_hp", 0))) 
+            self:SetMaxHealth(10 * math.random(50, 100) / 100 * (1 + GetGlobalFloat(gl .. "enemy_modifier_hp", 0))) 
             self:SetHealth(self:GetMaxHealth()) 
             -- print("CLUSTER SPAWNED")     
         
@@ -1792,8 +1829,21 @@ do
             self:SetHealth(self:Health() - dmg_num)  
   
             if self:Health() < 0 then  
-                for i = 1, math.random(1, 2) do
+                for i = 1, math.random(2, 4) do
                     garlic_like_create_material_drop(ply, self, "food", "common", 1)
+
+                    for i = 3, 4 do 
+                        local ammo_name = table.Random(tbl_ammo_names)
+                        ply:GiveAmmo(tbl_ammo_refill_amount[ammo_name], ammo_name, false)
+                        -- local class = table.Random(tbl_ammo)
+                        -- local ammo = ents.Create(class)
+                        -- ammo:SetCollisionGroup(COLLISION_GROUP_DEBRIS)
+                        -- ammo:SetPos(self:GetPos() + Vector(0, 0, 5))
+                        -- ammo:Spawn()
+                        -- ammo:SetNWBool(gl .. "settled_2", true)
+                        -- ammo:SetNWString(gl .. "item_name", language.GetPhrase(class))
+                        -- garlic_like_launch_entity(ammo, 0.05)
+                    end
                 end 
          
                 SafeRemoveEntity(self)
