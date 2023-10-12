@@ -28,6 +28,8 @@ excess fragments can be turned into gold.
 * Title systems, obtained from unlockables. Titles gives differing stat boosts and effects.
 * ENCUMBERING modifier, enemy slows player movespeed by 25% for 3 seconds. 
 * LIGHTNING modifier explosion slows player movespeed by 75% for 0.5 second.
+* WIP Weapon selector that shows rarity, element and attributes
+* A menu to show past attempts of a preset on a map, accessable through the game menu.
 
 ~. DONE Fix cooldown speeds!
 ~. DONE Work on relics unlockables serverside.
