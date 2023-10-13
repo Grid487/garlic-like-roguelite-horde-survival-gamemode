@@ -9,20 +9,22 @@ A Garry's Mod horde survival gamemode featuring roguelite features such as in-ma
 3. Press L and click on START
 4. Pick a spawn weapon
 5. You are also given a "Garlic Like G18" which has infinite ammo but with no attributes and element
-6. ---- INFO ----
-7. Press ALT / slow walk button to open up your stats screen, while holding ALT, press E to switch pages
-8. Killing enemies grant xp for levelling up which grants you the possibility of upgrading your stats or obtaining ITEMS/RELICS/SKILLS
-9. ITEMS are upgrades that multiply your stat's values, SKILLS are passively activated skills that damage your enemies, RELICS are upgrades that give unique effects to your character
-10. Upgrades are dividied into 7 rarities: POOR, COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, GOD
-11. For upgrades, rarity increases their upgrade value but for weapons rarity determines the ammount of attributes it has
-12. Weapon attributes stack multiplicatively with one another, and with item upgrades. meaning if a weapon has 30% DMG Multiplier and 25% DMG Multiplier while you also having a +80% DMG Multiplier item (a sword), it'll be counted as 1.3 * 1.25 * 1.8
-13. Weapons are able to be levelled up and have it's stats rerolled at a weapon upgrade station that appears every break session (every 5 minutes)
-14. Weapon gems are used to upgrade weapons and are dropped from enemies or obtainable from damaging crystal clusters
-15. 3 weapons of the same rarity are also able to be fused, creating a weapon of the next rarity. Be careful as this feature could possibly override a weapon you already have. So if you for example have an EPIC AK47, and you fuse 3 UNCOMMONs and get a RARE AK47, the rarity and stats will be overriden. (for now this is intended)
-16. Weapons have 3 elements, FIRE / POISON / LIGHTNING
-17. Each element has unique effects you can read up on in the GLOSSARY menu in the game menu
-18. Barrels appear in the map, destroying them yields food itemes that restores HP and AP (shield) and refills all your ammunition
-19. The main goal of the game is to survive for as long as possible, and to do this the player must max out character upgrades and then minmax their gun attributes in-game while also picking up the best upgrades.
+6. Press SHIFT / RUN KEY to dash (100% evasion during dash)
+7. Press CTRL / CROUCH + LMB + RMG to execute ult when ready
+ ---- INFO ----
+ - Press ALT / slow walk button to open up your stats screen, while holding ALT, press E to switch pages
+ - Killing enemies grant xp for levelling up which grants you the possibility of upgrading your stats or obtaining ITEMS/RELICS/SKILLS
+ - ITEMS are upgrades that multiply your stat's values, SKILLS are passively activated skills that damage your enemies, RELICS are - upgrades that give unique effects to your character
+ - Upgrades are dividied into 7 rarities: POOR, COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, GOD
+ - For upgrades, rarity increases their upgrade value but for weapons rarity determines the ammount of attributes it has
+ - Weapon attributes stack multiplicatively with one another, and with item upgrades. meaning if a weapon has 30% DMG Multiplier and - 25% DMG Multiplier while you also having a +80% DMG Multiplier item (a sword), it'll be counted as 1.3 * 1.25 * 1.8
+ - Weapons are able to be levelled up and have it's stats rerolled at a weapon upgrade station that appears every break session (every - 5 minutes)
+ - Weapon gems are used to upgrade weapons and are dropped from enemies or obtainable from damaging crystal clusters
+ - 3 weapons of the same rarity are also able to be fused, creating a weapon of the next rarity. Be careful as this feature could possibly override a weapon you already have. So if you for example have an EPIC AK47, and you fuse 3 UNCOMMONs and get a RARE AK47, - the rarity and stats will be overriden. (for now this is intended)
+ - Weapons have 3 elements, FIRE / POISON / LIGHTNING
+ - Each element has unique effects you can read up on in the GLOSSARY menu in the game menu
+ - Barrels appear in the map, destroying them yields food itemes that restores HP and AP (shield) and refills all your ammunition
+ - The main goal of the game is to survive for as long as possible, and to do this the player must max out character upgrades and then - minmax their gun attributes in-game while also picking up the best upgrades.
 
 More info could be updated in the future
 
