@@ -624,15 +624,17 @@ function garlic_like_proc_fire(attacker, target, damage_amount)
         target:TakeDamageInfo(damage_fire) 
 
         if not target.gl_fire_dmg_dealt_reduced_mod then 
-            target.gl_fire_dmg_dealt_reduced_mod = 0.15
+            target.gl_fire_dmg_dealt_reduced_mod = 0.2
         end
 
-        target.gl_fire_dmg_dealt_reduced_mod = math.min(0.75, target.gl_fire_dmg_dealt_reduced_mod + 0.01)
+        target.gl_fire_dmg_dealt_reduced_mod = math.min(0.85, target.gl_fire_dmg_dealt_reduced_mod + 0.01)
         -- print(timer.RepsLeft(gl .. "ignited_" .. target:EntIndex()) )
         -- print(target.gl_fire_average_dmg)
         -- print("repsleft: " .. target.gl_ignite_reps_left)
   
         target.gl_ignite_reps_left = target.gl_ignite_reps_left - 1    
+
+        -- print("target.gl_ignite_reps_left " .. target.gl_ignite_reps_left)
 
         timer.Adjust(gl .. "ignited_" .. target:EntIndex(), 0.25, math.min(20, target.gl_ignite_reps_left), nil) 
 
@@ -655,7 +657,7 @@ function garlic_like_proc_fire(attacker, target, damage_amount)
     if target.gl_ignited then 
         local repsleft = timer.RepsLeft(gl .. "ignited_" .. target:EntIndex())   
         -- target.gl_fire_hit_count = 0  
-        target.gl_ignite_reps_left = math.min(20, target.gl_ignite_reps_left + 1)
+        target.gl_ignite_reps_left = math.min(120, target.gl_ignite_reps_left + 1)
 
         -- target.gl_target_hit_counts = math.min(20, target.gl_target_hit_counts + 2)
 
@@ -696,7 +698,7 @@ function garlic_like_proc_lightning(ply, target, damage, ischain, dmginfo)
         ply.gl_lightning_damage_buff_stacks = 0
     end
 
-    ply.gl_lightning_damage_buff_stacks = math.min(30, ply.gl_lightning_damage_buff_stacks + 1)
+    ply.gl_lightning_damage_buff_stacks = math.min(37, ply.gl_lightning_damage_buff_stacks + 1)
 
     -- print("ply.gl_lightning_damage_buff_stacks " .. ply.gl_lightning_damage_buff_stacks)
 
@@ -704,13 +706,16 @@ function garlic_like_proc_lightning(ply, target, damage, ischain, dmginfo)
         ply.gl_lightning_chain_num = 0
     end
 
-    timer.Simple(10, function() 
+    timer.Simple(12, function() 
         ply.gl_lightning_damage_buff_stacks = math.max(0, ply.gl_lightning_damage_buff_stacks - 1)
     end)
 
     garlic_like_attach_particle(target, "ATTACH", "stormspirit_electric_vortex_debuff") 
     target.gl_lightning_debuffed = true
-    target.gl_lightning_debuffed_stacks = 0
+
+    if not target.gl_lightning_debuffed_stacks then 
+        target.gl_lightning_debuffed_stacks = 0
+    end
 
     timer.Simple(1, function() 
         if not IsValid(target) then return end 
@@ -800,18 +805,24 @@ function garlic_like_proc_poison(attacker, target, damage)
                 target.gl_poison_dmg_taken_mul = 0
             end
 
-            target.gl_poison_dmg_taken_mul = math.min(2.5, target.gl_poison_dmg_taken_mul + 0.125)
+            target.gl_poison_dmg_taken_mul = math.min(10, (target.gl_poison_dmg_taken_mul + 0.1) * 1.05)
 
-            target.gl_poison_nearby_ents = ents.FindInSphere(target:GetPos(), 100)
+            -- if target.gl_poison_dmg_taken_mul >= 9.5 then 
+            --     print("POISON DMG MUL  MAXXED")
+            -- else 
+            --     print("target.gl_poison_dmg_taken_mul " .. target.gl_poison_dmg_taken_mul)
+            -- end
+
+            target.gl_poison_nearby_ents = ents.FindInSphere(target:GetPos(), 110)
 
             for k, nearby_ent in pairs(target.gl_poison_nearby_ents) do 
                 if (nearby_ent:IsNPC() or nearby_ent:IsNextBot()) and nearby_ent ~= target then 
-                    damage_poison:SetDamage(math.max(5, target.gl_poison_dmg_total * 0.6))
+                    damage_poison:SetDamage(math.max(5, target.gl_poison_dmg_total * 0.5))
                     nearby_ent:TakeDamageInfo(damage_poison)
                 end
             end
 
-            target.gl_poison_dmg_total = math.Round(math.max(1, target.gl_poison_dmg_total * 0.667)) 
+            target.gl_poison_dmg_total = math.Round(math.max(1, target.gl_poison_dmg_total * 0.7)) 
             ParticleEffect("viper_poison_attack_explosion", target:LocalToWorld(target:OBBCenter()), Angle(0, 0, 0), target)
             target:EmitSound("dota2/viper_impact.wav", 100, 100, 1, CHAN_AUTO)
 
@@ -1648,12 +1659,14 @@ hook.Add("EntityTakeDamage", gl .. "damage_modifiers", function(ent, dmg)
         -- print(math.Truncate(1.04^ply.gl_lightning_damage_buff_stacks, 2))
 
         if ply.gl_lightning_damage_buff_stacks and ply.gl_lightning_damage_buff_stacks > 0 then 
-            dmg:ScaleDamage(math.min(3.5, math.Truncate(1.045^ply.gl_lightning_damage_buff_stacks, 2)))
+            -- print("math.min(5, math.Truncate(1.045^ply.gl_lightning_damage_buff_stacks, 2)) " .. math.min(5, math.Truncate(1.045^ply.gl_lightning_damage_buff_stacks, 2)))
+            dmg:ScaleDamage(math.min(5, math.Truncate(1.045^ply.gl_lightning_damage_buff_stacks, 2)))
         end
 
         if ent.gl_lightning_debuffed then             
-            dmg:ScaleDamage(1.25 + ent.gl_lightning_debuffed_stacks / 25)
+            -- print("(1.25 + ent.gl_lightning_debuffed_stacks / 15 )" .. (1.25 + ent.gl_lightning_debuffed_stacks / 15))
             ent.gl_lightning_debuffed_stacks = ent.gl_lightning_debuffed_stacks + 1
+            dmg:ScaleDamage(1.25 + math.Truncate(ent.gl_lightning_debuffed_stacks / 15, 2))
         end
 
         if ent.gl_loyal_mul then 
@@ -1773,7 +1786,7 @@ hook.Add("EntityTakeDamage", gl .. "damage_modifiers", function(ent, dmg)
             attacker.gl_bleed_dmginfo:SetAttacker(attacker)
             attacker.gl_bleed_dmginfo:SetInflictor(attacker) 
             attacker.gl_bleed_dmginfo:SetMaxDamage(152131)
-            attacker.gl_bleed_dmginfo:SetDamage(dmg:GetDamage() * 0.12)
+            attacker.gl_bleed_dmginfo:SetDamage(dmg:GetDamage() * 0.14)
 
             timer.Create(gl .. "enemy_bleed_modifier", 0.5, 20, function() 
                 if IsValid(attacker) and ent:Alive() then 
@@ -1824,7 +1837,7 @@ hook.Add("PostEntityTakeDamage", gl .. "post_damage_modifiers", function(ent, dm
             -- print(ply.gl_lightning_damage)  
 
             if ply:GetNWBool(gl .. ply_wep:GetClass() .. "lightning") and math.random() <= 0.13 then   
-                garlic_like_proc_lightning(ply, ent, 2.5, false, dmg)
+                garlic_like_proc_lightning(ply, ent, 3, false, dmg)
             end   
         end
 
@@ -2182,6 +2195,30 @@ hook.Add("OnNPCKilled", gl .. "enemy_killed", function(npc, att, infl)
         -- end
         -- ply:GiveAmmo(ply_wep:GetMaxClip1() * 0.2, ply_wep:GetPrimaryAmmoType(), true)
     -- end
+
+    --* IF ENEMY WAS POISONED
+    if ent.gl_poisoned then 
+        ParticleEffect("viper_poison_attack_explosion", ent:LocalToWorld(ent:OBBCenter()), Angle(0, 0, 0), ent)
+        ent:EmitSound("dota2/viper_impact.wav", 100, 100, 1, CHAN_AUTO)
+
+        local damage_poison = DamageInfo() 
+        damage_poison:SetDamage(ent.gl_poison_dmg_total) 
+        damage_poison:SetAttacker(ply)
+        damage_poison:SetInflictor(ply) 
+        damage_poison:SetDamageType(DMG_POISON) 
+        damage_poison:SetMaxDamage(876523)
+
+        ent.gl_poison_nearby_ents = ents.FindInSphere(ent:GetPos(), 125)
+ 
+        for k, nearby_ent in pairs(ent.gl_poison_nearby_ents) do 
+            if (nearby_ent:IsNPC() or nearby_ent:IsNextBot()) and nearby_ent ~= ent then 
+                local dist = ent:GetPos():Distance(nearby_ent:GetPos())
+
+                damage_poison:SetDamage(math.max(5, ent.gl_poison_dmg_total) * math.Remap(dist, 0, 125, 1, 0.75))
+                nearby_ent:TakeDamageInfo(damage_poison)
+            end
+        end
+    end
 
     if ply:GetNWBool(gl .. ply_wep:GetClass() .. "lightning") then 
         ply.gl_lightning_chain_entities = {}  

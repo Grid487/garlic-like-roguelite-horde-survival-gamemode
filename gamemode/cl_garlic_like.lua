@@ -2912,10 +2912,10 @@ timer.Simple(2, function()
                 garlic_like_upgrades_cleared = table.ClearKeys(garlic_like_upgrades)
                 Chance_upgrade_choice = math.random(1, 100)
                 local loop = 1
-                local chance_stats = (0.5 * 100)
+                local chance_stats = (0.4 * 100)
                 local chance_items = chance_stats + (0.25 * 100)
-                local chance_skills = chance_items + (0.1 * 100)
-                local chance_relics = chance_skills + (0.15 * 100)
+                local chance_skills = chance_items + (0.15 * 100)
+                local chance_relics = chance_skills + (0.2 * 100)
 
                 -- print("CHANCE UPGRADE CHOICE " .. Chance_upgrade_choice)
                 if Chance_upgrade_choice <= chance_stats then

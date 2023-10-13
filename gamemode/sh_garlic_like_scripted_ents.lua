@@ -1107,7 +1107,7 @@ do
         end
 
         function ENT:MergeDrop() 
-            for k, ent in pairs(ents.FindInSphere(self:GetPos(), 150)) do 
+            for k, ent in pairs(ents.FindInSphere(self:GetPos(), 200)) do 
                 if ent ~= self and self:GetNWInt(gl .. "item_amount") and ent:GetNWBool(gl .. "settled") and ent:GetClass() == self:GetClass() and ent:GetNWString(gl .. "item_name") == self:GetNWString(gl .. "item_name") and ent:GetNWString(gl .. "item_rarity") == self:GetNWString(gl .. "item_rarity") then 
                     self:SetNWInt(gl .. "item_amount", self:GetNWInt(gl .. "item_amount") + ent:GetNWInt(gl .. "item_amount"))
                     SafeRemoveEntity(ent)
