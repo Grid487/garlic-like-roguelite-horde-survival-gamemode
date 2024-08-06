@@ -1,3 +1,6 @@
+FROZE_GL = FROZE_GL or {}
+
+local gl = "garlic_like_"
 local W = ScrW() 
 local H = ScrH()
 local size = math.Clamp(7.5, 5, 15) * 0.1
@@ -279,11 +282,11 @@ hook.Add("HUDPaint", "WeaponSelector.Hooks.HUDPaint", function()
             --     PrintTable(wep)
             -- end
 
-            if tbl_gl_stored_bonused_weapons and tbl_gl_stored_bonused_weapons[wep.classname] then 
+            if FROZE_GL.gl_stored_bonused_weapons and FROZE_GL.gl_stored_bonused_weapons[wep.classname] then 
                 is_gl_wep = true
-                tbl = tbl_gl_stored_bonused_weapons[wep.classname] 
+                tbl = FROZE_GL.gl_stored_bonused_weapons[wep.classname] 
 
-                color_rarity = tbl_gl_rarity_colors[tbl.rarity]
+                color_rarity = FROZE_GL.tbl_rarity_colors[tbl.rarity]
                 -- color_rarity.a = 100
             end
 
@@ -311,7 +314,7 @@ hook.Add("HUDPaint", "WeaponSelector.Hooks.HUDPaint", function()
                 local element_name = tbl.element
                 local mat_element 
 
-                for key, element in pairs(tbl_gl_elements) do 
+                for key, element in pairs(FROZE_GL.tbl_elements) do 
                     -- PrintTable(element)
                     -- print(element.name)
                     -- print(element_name)
@@ -349,5 +352,7 @@ hook.Add("HUDPaint", "WeaponSelector.Hooks.HUDPaint", function()
 end)
 
 hook.Add("HUDShouldDraw", "WeaponSelector.Hooks.HUDShouldDraw", function(elementName)
+    if not GetConVar(gl .. "enable"):GetBool() then return end
+
     if hideElements[elementName] then return false end
 end)

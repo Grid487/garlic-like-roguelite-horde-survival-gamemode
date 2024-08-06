@@ -77,7 +77,7 @@ local tbl_rarity_weights = {
     },
     [7] = {
         rarity = "god", 
-        weight = 350, 
+        weight = 325, 
         weight_min = 0,
         weight_max = 0,
         color = Color(255, 0, 0),
@@ -85,6 +85,20 @@ local tbl_rarity_weights = {
 }
 
 local rarity_weights_max = 0
+
+local tbl_ammo_refill_amount = {
+    ["AR2"] = 30,
+    ["AR2AltFire"] = 2,
+    ["Pistol"] = 30,
+    ["SMG1"] = 30,
+    ["357"] = 10,
+    ["XBowBolt"] = 10,
+    ["RPG_Round"] = 2,
+    ["SMG1_Grenade"] = 2,
+    ["Grenade"] = 2,
+    ["357Round"] =  10,
+    ["Buckshot"] =  10,
+}
 
 for k, v in ipairs(tbl_rarity_weights) do 
     rarity_weights_max = rarity_weights_max + v.weight 
@@ -243,10 +257,10 @@ do
             self:SetHealth(self:Health() - dmg:GetDamage())
 
             if self:Health() <= 0 then  
-                self.gem_amount = 1
+                self.gem_amount = 2
                 self.gem_add_chance = 0.25
 
-                for i2 = 1, 30 + GetGlobalInt(gl .. "minutes", 0) * 2 do 
+                for i2 = 1, 30 + GetGlobalInt(gl .. "minutes", 0) * 5 do 
                     self.gem_rng = math.random() 
 
                     if self.gem_rng <= self.gem_add_chance then
@@ -284,11 +298,14 @@ do
         ply = self:GetOwner()
 
         timer.Simple(0.25, function()
+            if not IsValid(self) then return end
             self:SetMoveParent(ply)
             self:SetAngles(ply:GetAngles())
         end)
 
         timer.Simple(0.3, function()
+            if not IsValid(self) then return end
+            
             if SERVER then
                 local model_rocket_launcher = ents.Create("base_anim")
                 mrl = model_rocket_launcher
@@ -892,6 +909,77 @@ do
         },
     }
 
+    local powerups = {
+        ["Main"] = {
+            name = "Nuke",
+            bodygroup_id = 0,
+            use_powerup = function(ply, mod) 
+                for k, ent in pairs(ents.FindInSphere(ply:GetPos(), 5000)) do 
+                    if ent:IsNPC() or ent:IsNextBot() then 
+                        ent:TakeDamage(10000, ply, ply)
+                        -- ent:SetHealth(ent:Health() * 0.01)
+                    end
+                end
+            end,
+        },
+        ["MaxAmmo"] = {
+            name = "Ammo Refill",
+            bodygroup_id = 1,
+            use_powerup = function(ply, mod) 
+                for k, v in pairs(tbl_ammo_refill_amount) do 
+                    ply:GiveAmmo(v * 12 * math.max(1, GetGlobalBool(gl .. "minutes", 1) * 0.8), k, false)
+                end
+            end,
+         },
+        ["InstaKill"] = {
+            name = "Bonus Damage Increase",
+            bodygroup_id = 2,
+            use_powerup = function(ply, mod) 
+                ply:SetNWFloat(gl .. "powerup_InstaKill", ply:GetNWFloat(gl .. "powerup_InstaKill", 1) + mod) 
+                garlic_like_upgrade_str(ply, STR, 0)
+
+                timer.Simple(15, function() 
+                    if not IsValid(ply) then return end
+                    ply:SetNWFloat(gl .. "powerup_InstaKill", ply:GetNWFloat(gl .. "powerup_InstaKill", 1) - mod) 
+                    garlic_like_upgrade_str(ply, STR, 0)
+                end)
+            end,
+         },
+        ["FullPower"] = {
+            name = "+100% Cooldown Speed Increase",
+            bodygroup_id = 3,
+            use_powerup = function(ply, mod) 
+                ply:SetNWFloat(gl .. "powerup_FullPower", ply:GetNWFloat(gl .. "powerup_FullPower", 1) + 1) 
+                garlic_like_upgrade_int(ply, INT, 0)
+
+                timer.Simple(15, function() 
+                    ply:SetNWFloat(gl .. "powerup_FullPower", ply:GetNWFloat(gl .. "powerup_FullPower", 1) - 1) 
+                    garlic_like_upgrade_int(ply, INT, 0)
+                end)
+            end,
+         },
+        ["DoublePoints"] = {
+            name = "XP & Gold Gain Multiplier",
+            bodygroup_id = 4,
+            use_powerup = function(ply, mod) 
+                ply:SetNWFloat(gl .. "powerup_DoublePoints", ply:GetNWFloat(gl .. "powerup_DoublePoints", 1) + mod) 
+                garlic_like_upgrade_int(ply, INT, 0)
+
+                timer.Simple(15, function() 
+                    ply:SetNWFloat(gl .. "powerup_DoublePoints", ply:GetNWFloat(gl .. "powerup_DoublePoints", 1) - mod) 
+                    garlic_like_upgrade_int(ply, INT, 0)
+                end)
+            end, 
+        },
+        ["ArmorVest"] = {
+            name = "Armor Vest",
+            bodygroup_id = 5,
+            use_powerup = function(ply, mod) 
+                ply:SetArmor(ply:Armor() + 200 * math.max(1, GetGlobalInt(gl .. "minutes", 1) * 0.8))                
+            end,
+        },
+    }
+
     local ENT = {}
     ENT.Type = "anim"
     ENT.Base = "base_anim"
@@ -943,18 +1031,22 @@ do
             if not self:GetNWBool(gl .. "settled") then return end
             if not self:GetNWBool(gl .. "settled_2") then return end
             --
-            local rarity = self:GetNWString(gl .. "item_rarity")
+            local rarity = string.lower(self:GetNWString(gl .. "item_rarity"))
             local item_name = self:GetNWString(gl .. "item_name")
+            local item_id = self:GetNWString(gl .. "item_id", "SAMPLE_ID")
+            local item_amount = self:GetNWInt(gl .. "item_amount", 1)
             local order_type = "update_held_num_ores"
             -- print(gl .. "held_num_material_" .. rarity)
             -- print("HELD ITEM " .. rarity .. " " .. ply:GetPData(gl .. "held_num_material_" .. rarity, ply:GetPData(gl .. "held_num_material_" .. rarity, 0) + 1))
             if self:GetNWBool(gl .. "is_ore") then  
-                ply:SetPData(gl .. "held_num_material_" .. rarity, ply:GetPData(gl .. "held_num_material_" .. rarity, 0) + self:GetNWInt(gl .. "item_amount", 1))
-                ply:SetNWInt(gl .. "held_num_material_" .. rarity, ply:GetPData(gl .. "held_num_material_" .. rarity, 0) + self:GetNWInt(gl .. "item_amount", 1))
+                print("ply:GetNWInt " .. rarity .. " " .. ply:GetNWInt(gl .. "held_num_material_" .. rarity) .. " +" .. item_amount) 
+                ply:SetPData(gl .. "held_num_material_" .. rarity, ply:GetPData(gl .. "held_num_material_" .. rarity, 0) + item_amount)
+                ply:SetNWInt(gl .. "held_num_material_" .. rarity, tonumber(ply:GetPData(gl .. "held_num_material_" .. rarity, 0)) + item_amount)
+                print("ply:GetNWInt " .. rarity .. " " .. ply:GetNWInt(gl .. "held_num_material_" .. rarity)) 
 
                 --* UPDATE PLAYER UNLOCKABLES PROGRESS 
                 if not tobool(ply:GetPData(gl .. "bonus_gem_drops_unlocked")) then 
-                    ply:SetNWInt(gl .. "gems_collected", ply:GetNWInt(gl .. "gems_collected", 0) + self:GetNWInt(gl .. "item_amount", 1))
+                    ply:SetNWInt(gl .. "gems_collected", ply:GetNWInt(gl .. "gems_collected", 0) + item_amount)
 
                     if ply:GetNWInt(gl .. "gems_collected", 0) >= 300 then 
                         garlic_like_unlock(ply, gl .. "bonus_gem_drops", "Gem Drops Increase")
@@ -962,26 +1054,33 @@ do
                 end
             end
 
+            --* IF IT'S A NON ORE MATERIAL
+            if self:GetNWBool(gl .. "is_non_ore_mat") then 
+                order_type = "update_held_num_materials"
+
+                ply:SetPData(gl .. "held_num_material_" .. item_id, ply:GetPData(gl .. "held_num_material_" .. item_id, 0) + item_amount)
+                ply:SetNWInt(gl .. "held_num_material_" .. item_id, tonumber(ply:GetPData(gl .. "held_num_material_" .. item_id, 0)) + item_amount)  
+                print("ply:GetNWInt " .. item_id .. " " .. ply:GetNWInt(gl .. "held_num_material_" .. item_id)) 
+
+                --* UPDATE PLAYER UNLOCKABLES PROGRESS 
+                if self:GetNWBool(gl .. "is_reroll_crystal") and not tobool(ply:GetPData(gl .. "bonus_reroll_gem_drops_unlocked")) then 
+                    ply:SetNWInt(gl .. "reroll_gems_collected", ply:GetNWInt(gl .. "reroll_gems_collected", 0) + item_amount)
+
+                    if ply:GetNWInt(gl .. "reroll_gems_collected", 0) >= 300 then 
+                        garlic_like_unlock(ply, gl .. "bonus_reroll_gem_drops", "Reroll Gem Drops Increase")
+                    end
+                end
+            end
+  
             --* IF IT'S A FOOD ITEM
             if self:GetNWBool(gl .. "is_food") then 
                 self:Heal(ply)
                 order_type = "food"
             end
 
-            --* IF IT'S A REROLL CRYSTAL
-            if self:GetNWBool(gl .. "is_reroll_crystal") then 
-                order_type = "update_held_num_materials"
-                ply:SetPData(gl .. "held_num_material_" .. item_name, ply:GetPData(gl .. "held_num_material_" .. item_name, 0) + self:GetNWInt(gl .. "item_amount", 1))
-                ply:SetNWInt(gl .. "held_num_material_" .. item_name, ply:GetPData(gl .. "held_num_material_" .. item_name, 0) + self:GetNWInt(gl .. "item_amount", 1))            
-
-                --* UPDATE PLAYER UNLOCKABLES PROGRESS 
-                if not tobool(ply:GetPData(gl .. "bonus_reroll_gem_drops_unlocked")) then 
-                    ply:SetNWInt(gl .. "reroll_gems_collected", ply:GetNWInt(gl .. "reroll_gems_collected", 0) + self:GetNWInt(gl .. "item_amount", 1))
-
-                    if ply:GetNWInt(gl .. "reroll_gems_collected", 0) >= 300 then 
-                        garlic_like_unlock(ply, gl .. "bonus_reroll_gem_drops", "Reroll Gem Drops Increase")
-                    end
-                end
+            if self:GetNWBool(gl .. "is_powerup") then 
+                self:Powerup(ply)
+                order_type = "powerup"
             end
  
             net.Start(gl .. "update_database_sv_to_cl")
@@ -990,6 +1089,7 @@ do
             net.WriteString(self:GetNWString(gl .. "item_name"))
             net.WriteString(rarity)
             net.WriteInt(self:GetNWInt(gl .. "item_amount", 1), 32)
+            net.WriteBool(true)
             net.Send(ply)  
  
             ply:EmitSound("ui/item_medal_pickup.wav", 120, 100, 1, CHAN_AUTO) 
@@ -1016,6 +1116,18 @@ do
             ply:EmitSound("items/smallmedkit1.wav", 70, 100, 1, CHAN_AUTO)
         end
 
+        function ENT:Powerup(ply) 
+            local id = self:GetNWString(gl .. "powerup_id")  
+            print("POWER ID " .. id)
+
+            for powerup_id, data in pairs(powerups) do 
+                if powerup_id == id then 
+                    data.use_powerup(ply, self:GetNWFloat(gl .. "powerup_mod"))
+                    ply:EmitSound("garlic_like/powerup_pickup_" .. id .. ".wav")
+                end
+            end
+        end
+
         function ENT:Use(ply) 
             self:StartTouch(ply)
         end
@@ -1023,55 +1135,121 @@ do
         function ENT:DetermineItemDrop(determine_tier)
             -- print("INIT DETERMINED TIER: " .. determine_tier)
 
-            local chosen_rarity = {
+            local dropped_ent = {
                 name = "",
+                id = "",
                 rarity = "", 
                 model = "", 
                 particle_trail = "",
                 particle_beam = "",
-            } 
+            }  
 
             if self:GetNWBool(gl .. "is_reroll_crystal") then 
-                chosen_rarity.name = "Reroll Crystal"
-                chosen_rarity.rarity = "common"
-                chosen_rarity.model = "models/fortnite_crafting/fortnite_crafting_materials/quartz_crystal.mdl"
-                chosen_rarity.particle_trail = "loot_trail_" .. chosen_rarity.rarity
-                chosen_rarity.particle_beam = "loot_beam_rarity_" .. chosen_rarity.rarity
+                dropped_ent.name = "Reroll Crystal"
+                dropped_ent.id = "reroll_crystal"
+                dropped_ent.rarity = "common"
+                dropped_ent.model = "models/fortnite_crafting/fortnite_crafting_materials/quartz_crystal.mdl"
+                dropped_ent.particle_trail = "loot_trail_" .. dropped_ent.rarity
+                dropped_ent.particle_beam = "loot_beam_rarity_" .. dropped_ent.rarity
+            end
+
+            if self:GetNWBool(gl .. "is_element_crystal") then 
+                dropped_ent.name = "Element Crystal"
+                dropped_ent.id = "element_crystal"
+                dropped_ent.rarity = "legendary"
+                dropped_ent.model = "models/fortnite_crafting/fortnite_crafting_materials/brightcore_ore.mdl"
+                dropped_ent.particle_trail = "loot_trail_" .. dropped_ent.rarity
+                dropped_ent.particle_beam = "loot_beam_rarity_" .. dropped_ent.rarity
+            end
+
+            if self:GetNWBool(gl .. "is_crate_key") then 
+                dropped_ent.name = "Crate Key"
+                dropped_ent.id = "crate_key"
+                dropped_ent.rarity = "common"
+                dropped_ent.model = "models/mannco/mannkey.mdl"
+                dropped_ent.particle_trail = "loot_trail_" .. dropped_ent.rarity
+                dropped_ent.particle_beam = "loot_beam_rarity_" .. dropped_ent.rarity
             end
 
             if self:GetNWBool(gl .. "is_food") then 
                 local food_item = food_items[math.random(1, #food_items)] 
-                chosen_rarity.name = food_item.name
-                chosen_rarity.rarity = food_item.rarity
-                chosen_rarity.model = food_item.model
-                chosen_rarity.particle_trail = "loot_trail_" .. chosen_rarity.rarity
-                chosen_rarity.particle_beam = "loot_beam_rarity_" .. chosen_rarity.rarity
+                dropped_ent.name = food_item.name
+                dropped_ent.rarity = food_item.rarity
+                dropped_ent.model = food_item.model
+                dropped_ent.particle_trail = "loot_trail_" .. dropped_ent.rarity
+                dropped_ent.particle_beam = "loot_beam_rarity_" .. dropped_ent.rarity
                 --
                 self:SetNWFloat(gl .. "food_hp_heal", food_item.healing_amount)  
                 self:SetNWFloat(gl .. "food_mana_heal", food_item.mana_healing)   
             end
 
+            if self:GetNWBool(gl .. "is_powerup") then 
+                local powerup_id
+                local powerup_name
+                local bg_id 
+
+                for id, data in RandomPairs(powerups) do 
+                    -- if id ~= "InstaKill" then continue end
+                    -- if id ~= "FullPower" then continue end
+                    -- if id ~= "DoublePoints" then continue end
+                    powerup_id = id 
+                    powerup_name = data.name
+                    bg_id = data.bodygroup_id
+                    break  
+                end
+
+                dropped_ent.name = powerup_name
+                dropped_ent.rarity = "legendary"
+                dropped_ent.model = "models/codvanguard/other/powerups.mdl"
+                dropped_ent.particle_trail = "loot_trail_" .. dropped_ent.rarity
+                dropped_ent.particle_beam = "loot_beam_rarity_" .. dropped_ent.rarity
+
+                self:SetNWString(gl .. "powerup_id", powerup_id)
+                self:SetNWInt(gl .. "bodygroup_id", bg_id)
+
+                local multiplier = 1                
+
+                if powerup_id == "InstaKill" then  
+                    multiplier = math.Truncate(math.random(1, 3) + math.Rand(0.1, 1), 2) 
+
+                    timer.Simple(0.1, function()
+                        if not IsValid(self) then return end
+                        self:SetNWString(gl .. "item_name", "+" .. (multiplier) * 100 .. "% " .. self:GetNWString(gl .. "item_name")) 
+                    end)
+                elseif powerup_id == "DoublePoints" then  
+                    multiplier = math.Truncate(math.random(1, 1.5) + math.Rand(0.1, 0.5), 2) 
+                    
+                    timer.Simple(0.1, function()
+                        if not IsValid(self) then return end
+                        self:SetNWString(gl .. "item_name", "+" .. (multiplier) * 100 .. "% " .. self:GetNWString(gl .. "item_name")) 
+                    end)
+                end
+
+                self:SetNWFloat(gl .. "powerup_mod", multiplier) 
+            end
+
             if self:GetNWBool(gl .. "is_ore") then 
                 if determine_tier == "RANDOM" then
-                    chosen_rarity = rarities[math.random(1, #rarities)]
+                    dropped_ent = rarities[math.random(1, #rarities)]
                 else
                     -- print("DETERMINED TIER: " .. determine_tier)
                     for k, rarity_entry in pairs(rarities) do
                         if rarity_entry.rarity == determine_tier then
-                            chosen_rarity = rarities[k]
+                            dropped_ent = rarities[k]
                         end
                     end
                 end
             end
 
             -- print("CHOSEN RARITY TABLE: ")
-            -- PrintTable(chosen_rarity)
+            -- PrintTable(dropped_ent)
 
-            self:SetNWString(gl .. "item_name", chosen_rarity.name)
-            self:SetNWString(gl .. "item_rarity", chosen_rarity.rarity)
-            self:SetNWString(gl .. "item_crystal_model", chosen_rarity.model)
-            self:SetNWString(gl .. "item_trail", chosen_rarity.particle_trail)
-            self:SetNWString(gl .. "item_beam", chosen_rarity.particle_beam)
+            if dropped_ent.id then self:SetNWString(gl .. "item_id", dropped_ent.id) end     
+            self:SetNWString(gl .. "item_name", dropped_ent.name)        
+            self:SetNWString(gl .. "item_rarity", dropped_ent.rarity)
+            self:SetNWString(gl .. "item_crystal_model", dropped_ent.model)
+            self:SetNWString(gl .. "item_trail", dropped_ent.particle_trail)
+            self:SetNWString(gl .. "item_beam", dropped_ent.particle_beam)
             --
             self:ParticleInit("trail")
         end
@@ -1104,7 +1282,7 @@ do
         end
 
         function ENT:MergeDrop() 
-            for k, ent in pairs(ents.FindInSphere(self:GetPos(), 150)) do 
+            for k, ent in pairs(ents.FindInSphere(self:GetPos(), 200)) do 
                 if ent ~= self and self:GetNWInt(gl .. "item_amount") and ent:GetNWBool(gl .. "settled") and ent:GetClass() == self:GetClass() and ent:GetNWString(gl .. "item_name") == self:GetNWString(gl .. "item_name") and ent:GetNWString(gl .. "item_rarity") == self:GetNWString(gl .. "item_rarity") then 
                     self:SetNWInt(gl .. "item_amount", self:GetNWInt(gl .. "item_amount") + ent:GetNWInt(gl .. "item_amount"))
                     SafeRemoveEntity(ent)
@@ -1133,12 +1311,22 @@ do
                     self:EmitSound("garlic_like/item_drop_sounds/item_drop_" .. self:GetNWString(gl .. "item_rarity") .. ".wav", 120, 100, 1, CHAN_AUTO)
                 end)
             end
+
+            -- if self:GetNWBool(gl .. "is_powerup") then 
+            --     if self:GetNWString(gl .. "powerup_id") == "InstaKill" then 
+                    
+            --     elseif self:GetNWString(gl .. "powerup_id") == "DoublePoints" then 
+
+            --     end
+            -- end
         end
     end
 
     if CLIENT then
         function ENT:Initialize()
             timer.Simple(0.15, function()
+                if not IsValid(self) then return end 
+
                 if self:GetNWString(gl .. "item_rarity") == nil then
                     self:SetNWString(gl .. "item_rarity", "poor")
                 end
@@ -1150,7 +1338,20 @@ do
 
         function ENT:Draw()
             if self.crystal_model == nil then 
-                self.crystal_model = ClientsideModel(self:GetNWString(gl .. "item_crystal_model"))
+                self.crystal_model = ClientsideModel(self:GetNWString(gl .. "item_crystal_model")) 
+                
+                if self:GetNWBool(gl .. "is_powerup") then 
+                    ParticleEffectAttach("superrare_plasma2", PATTACH_ABSORIGIN_FOLLOW, self.crystal_model, 0)
+                end
+            end
+
+            if self.crystal_model then 
+                if self:GetNWInt(gl .. "bodygroup_id") == 0 then 
+                    self.crystal_model:SetBodygroup(0, 0)                
+                else 
+                    self.crystal_model:SetBodygroup(0, 1)               
+                    self.crystal_model:SetBodygroup(self:GetNWInt(gl .. "bodygroup_id"), 1)                
+                end
             end
             
             if self.gl_model_set and self.crystal_model ~= nil then
@@ -1174,7 +1375,7 @@ do
     gl_crate.Base = "base_anim"
     gl_crate.PrintName = "Garlic Like Crate"
     gl_crate.Category = "Garlic Like"
-    gl_crate.Spawnable = true
+    gl_crate.Spawnable = true 
 
     if SERVER then
         function gl_crate:Initialize()
@@ -1201,62 +1402,10 @@ do
                 if not IsValid(self) then return end
                 self.seal_top:SetMoveParent(self)
                 self.seal_top:SetPos(Vector(0, 0, 65))
-            end)
- 
-            self.rarity_weights = {
-                ["poor"] = {
-                    min = 0,
-                    max = 0,
-                    weight = 480
-                },
-                ["common"] = {
-                    min = 0,
-                    max = 0,
-                    weight = 320
-                },
-                ["uncommon"] = {
-                    min = 0,
-                    max = 0,
-                    weight = 240
-                },
-                ["rare"] = {
-                    min = 0,
-                    max = 0,
-                    weight = 170
-                },
-                ["epic"] = {
-                    min = 0,
-                    max = 0,
-                    weight = 120
-                },
-                ["legendary"] = {
-                    min = 0,
-                    max = 0,
-                    weight = 80
-                },
-                ["god"] = {
-                    min = 0,
-                    max = 0,
-                    weight = 40
-                }
-            }
-
-            self.rarity_starting_num = 1
-            self.rarity_weights_sum = 0
-
-            for k, entry in SortedPairs(self.rarity_weights) do
-                entry.min = self.rarity_starting_num
-                entry.max = self.rarity_starting_num + entry.weight
-                self.rarity_starting_num = self.rarity_starting_num + entry.weight
-            end
-
-            for k, entry in pairs(self.rarity_weights) do
-                self.rarity_weights_sum = self.rarity_weights_sum + entry.weight
-            end
+            end) 
         end
 
         function gl_crate:OpenCrate(ply) 
-            self.IsUsed = true
             self:EmitSound("garlic_like/item_drop_sounds/item_open_crate_short.wav", 120, 100, 1, CHAN_AUTO)
 
             timer.Simple(4, function()
@@ -1274,7 +1423,7 @@ do
                 self:SetModel("models/mannco/manncratempty.mdl")
                 ParticleEffect("versus_door_slam", self.seal_top_pos, Angle(0, 0, 0), self)
 
-                timer.Create(tostring(self:EntIndex() .. "create_drops"), 0.12, math.random(25, 50), function()
+                timer.Create(tostring(self:EntIndex() .. "create_drops"), 0.1, math.random(25, 50), function()
                     if not IsValid(self) then return end
                     self:CreateDrop()
                 end)
@@ -1285,7 +1434,21 @@ do
         end
 
         function gl_crate:Use(ply)
-            if not self.IsUsed then
+            print(ply:GetNWInt(gl .. "held_num_material_Crate Key", 0))
+            if not self.IsUsed and ply:GetNWInt(gl .. "held_num_material_Crate Key", 0) > 0 then 
+                self.IsUsed = true
+                ply:SetPData(gl .. "held_num_material_Crate Key", ply:GetPData(gl .. "held_num_material_Crate Key", 0) - 1)
+                ply:SetNWInt(gl .. "held_num_material_Crate Key", tonumber(ply:GetPData(gl .. "held_num_material_Crate Key", 0)))        
+
+                net.Start(gl .. "update_database_sv_to_cl")
+                net.WriteEntity(ply)
+                net.WriteString("update_held_num_materials")
+                net.WriteString("Crate Key")
+                net.WriteString("common")
+                net.WriteInt(-1, 32)
+                net.WriteBool(true)
+                net.Send(ply)  
+
                 self:OpenCrate(ply)
             end
         end
@@ -1296,9 +1459,9 @@ do
 
         function gl_crate:CreateDrop()
             self:EmitSound("garlic_like/item_drop_sounds/item_launch.wav", 100, 100, 0.75, CHAN_AUTO)
-            local number = math.random(1, self.rarity_weights_sum)
+            local number = math.random(1, FROZE_GL.rarity_weights_sum_gems)
 
-            for rarity, entry in pairs(self.rarity_weights) do
+            for rarity, entry in pairs(FROZE_GL.rarity_weights) do
                 if self:IsNumBetween(number, entry.min, entry.max) then 
                     -- print("GEM RARITY FROM CRATE IS: " .. rarity)
                     
@@ -1312,6 +1475,10 @@ do
 
             if math.random() <= 0.5 then      
                 garlic_like_create_material_drop(self, self, "reroll_crystal", "", math.Round(math.random(1, 3) * (1 + math.max(0, GetGlobalBool(gl .. "minutes", 1) * 0.1))), Vector(0, 0, 65))                 
+            end
+
+            if math.random() <= 0.1 then      
+                garlic_like_create_material_drop(self, self, "element_crystal", "", math.Round(1 * (1 + math.max(0, GetGlobalBool(gl .. "minutes", 1) * 0.1))), Vector(0, 0, 65))                 
             end
         end
     end
@@ -1703,7 +1870,7 @@ do
             self:SetMoveType(MOVETYPE_FLY)
             self:SetSolid(SOLID_VPHYSICS)
             self:SetUseType(SIMPLE_USE)
-            self:SetMaxHealth(400 * math.random(75, 125) / 100 * (1 + GetGlobalFloat(gl .. "enemy_modifier_hp", 0))) 
+            self:SetMaxHealth(200 * math.random(50, 100) / 100 * (1 + GetGlobalFloat(gl .. "enemy_modifier_hp", 0))) 
             self:SetHealth(self:GetMaxHealth())
             self.RarityNum = math.random(1, rarity_weights_max)
             -- print("CLUSTER SPAWNED")
@@ -1720,8 +1887,7 @@ do
             physObj:Wake()
             physObj:SetMass(physObj:GetMass() * 10)
             --
-            self:SetName(gl .. "crystal_cluster_" .. self:GetNWString(gl .. "item_rarity"))
-            SafeRemoveEntityDelayed(self, 180)
+            self:SetName(gl .. "crystal_cluster_" .. self:GetNWString(gl .. "item_rarity")) 
         end
 
         function ENT:OnTakeDamage(dmg) 
@@ -1741,6 +1907,7 @@ do
             net.WriteString("Ore")
             net.WriteString(self:GetNWString(gl .. "item_rarity", "poor"))
             net.WriteInt(gem_gain, 32)
+            net.WriteBool(true)
             net.Send(ply)
             --
             if self:Health() < 0 then 
@@ -1758,6 +1925,31 @@ end
 
 --* loot barrel 
 do 
+    local tbl_ammo = {
+        "item_ammo_357",
+        "item_ammo_ar2",
+        "item_ammo_pistol",
+        "item_ammo_smg1",
+        "item_ammo_357",
+        "item_box_buckshot",
+        "item_rpg_round",
+        "item_ammo_crossbow", 
+    }  
+
+    local tbl_ammo_names = {
+        "AR2",
+        "AR2AltFire",
+        "Pistol",
+        "SMG1",
+        "357",
+        "XBowBolt",
+        "RPG_Round",
+        "SMG1_Grenade",
+        "Grenade",
+        "357Round",
+        "Buckshot",
+    } 
+
     local ENT = {}
     ENT.Type = "anim"
     ENT.Base = "base_anim"
@@ -1773,15 +1965,14 @@ do
             -- self:SetMoveType(MOVETYPE_FLY)
             self:SetSolid(SOLID_VPHYSICS)
             self:SetUseType(SIMPLE_USE)
-            self:SetMaxHealth(150 * math.random(50, 100) / 100 * (1 + GetGlobalFloat(gl .. "enemy_modifier_hp", 0))) 
+            self:SetMaxHealth(5 * math.random(50, 100) / 100 * (1 + GetGlobalFloat(gl .. "enemy_modifier_hp", 0))) 
             self:SetHealth(self:GetMaxHealth()) 
             -- print("CLUSTER SPAWNED")     
         
             local physObj = self:GetPhysicsObject()
             if not physObj:IsValid() then return end
             physObj:Wake()
-            physObj:SetMass(physObj:GetMass() * 10) 
-            SafeRemoveEntityDelayed(self, 180)
+            physObj:SetMass(physObj:GetMass() * 10)  
         end
 
         function ENT:OnTakeDamage(dmg) 
@@ -1792,9 +1983,19 @@ do
             self:SetHealth(self:Health() - dmg_num)  
   
             if self:Health() < 0 then  
-                for i = 1, math.random(1, 2) do
-                    garlic_like_create_material_drop(ply, self, "food", "common", 1)
+                for i = 1, math.random(2, 4) do
+                    garlic_like_create_material_drop(ply, self, "food", "common", 1, Vector(0, 0, 30))
+
+                    for i = 3, 4 do 
+                        for ammo_name, value in pairs(tbl_ammo_refill_amount) do 
+                            ply:GiveAmmo(math.floor(value * math.Rand(0.4, 0.6)), ammo_name, false)
+                        end 
+                    end
                 end 
+
+                if math.random() <= 0.15 then 
+                    garlic_like_create_material_drop(ply, self, "powerup", rarity, 1, Vector(0, 0, 30))
+                end
          
                 SafeRemoveEntity(self)
             end
