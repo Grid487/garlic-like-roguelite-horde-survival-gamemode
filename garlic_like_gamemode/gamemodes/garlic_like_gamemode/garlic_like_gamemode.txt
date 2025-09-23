@@ -1,0 +1,19 @@
+"garlic_like_gamemode"
+{
+	"base"		"base"
+	"title"		"Garlic Like"
+	"menusystem"	"1"
+	"workshopid"	""
+
+	"settings"
+	{
+		1
+		{
+			"name"		"garlic_like_settings_convar_test"
+			"text"		"sample text"
+			"help"		"sample text help"
+			"type"		"Numeric"
+			"default"	"50"
+		}
+	}
+}
